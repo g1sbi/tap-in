@@ -1,9 +1,14 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import 'react-native-get-random-values';
+import { Platform } from 'react-native';
 import 'react-native-reanimated';
 import '../polyfills';
+
+// Only import react-native-get-random-values on native platforms
+if (Platform.OS !== 'web') {
+  require('react-native-get-random-values');
+}
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 

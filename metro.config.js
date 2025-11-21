@@ -37,6 +37,8 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   return context.resolveRequest(context, moduleName, platform);
 };
 
+// Only add Node.js polyfills for native platforms
+// Web platform uses browser APIs natively
 const nodeLibsExtra = require('node-libs-react-native');
 config.resolver.extraNodeModules = {
   ...nodeLibsExtra,

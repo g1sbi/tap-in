@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useGameState } from '@/lib/game-state';
@@ -43,10 +43,30 @@ export default function GameScreen() {
     router.push('/');
   };
 
+  const handleQuitPrompt = () => {
+    Alert.alert(
+      'Leave Game?',
+      'Are you sure you want to leave? Your opponent will win.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Leave',
+          style: 'destructive',
+          onPress: handleQuit,
+        },
+      ]
+    );
+  };
+
   useEffect(() => {
     if (gamePhase === 'RESULTS' && lastRoundResults) {
       setShowResults(true);
     } else {
+      setShowResults(false);
+    }
+    
+    // Clear results overlay when game ends
+    if (gamePhase === 'GAME_OVER') {
       setShowResults(false);
     }
   }, [gamePhase, lastRoundResults]);
@@ -86,6 +106,11 @@ export default function GameScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
+        {gamePhase !== 'GAME_OVER' && (
+          <TouchableOpacity style={styles.quitButtonTop} onPress={handleQuitPrompt}>
+            <Text style={styles.quitButtonTopText}>QUIT</Text>
+          </TouchableOpacity>
+        )}
         <View style={styles.opponentArea}>
           <PlayerInfo
             points={opponentScore}
@@ -142,7 +167,7 @@ export default function GameScreen() {
         </View>
       </View>
 
-      {showResults && lastRoundResults && myResult && opponentResult && (
+      {showResults && lastRoundResults && myResult && opponentResult && gamePhase !== 'GAME_OVER' && (
         <ResultsOverlay
           dice={lastRoundResults.dice}
           myResult={myResult.result}
@@ -220,6 +245,24 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 12,
     gap: 8,
+  },
+  quitButtonTop: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 100,
+    backgroundColor: '#2A2A2A',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FF4458',
+  },
+  quitButtonTopText: {
+    color: '#FF4458',
+    fontSize: 12,
+    fontWeight: 'bold',
+    letterSpacing: 1,
   },
   opponentArea: {
     gap: 6,

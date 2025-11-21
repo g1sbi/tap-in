@@ -79,25 +79,61 @@ export const useGameState = create<GameState>((set) => ({
   actions: {
     setRoom: (code, role, playerId) => set({ roomCode: code, playerRole: role, playerId }),
     setOpponent: (opponentId) => set({ opponentId }),
-    startGame: (initialDice) => set({ 
-      gamePhase: 'BETTING', 
-      currentDice: initialDice,
-      round: 1,
-      myScore: 100,
-      opponentScore: 100,
-      timeRemaining: 10,
-    }),
-    setCurrentDice: (dice) => set((state) => ({ 
-      currentDice: dice, 
-      previousDice: state.currentDice 
-    })),
+    startGame: (initialDice) => {
+      const stateBefore = useGameState.getState();
+      console.log(`[STATE] startGame called | Dice: ${initialDice} | Previous dice: ${stateBefore.currentDice}`);
+      set({ 
+        gamePhase: 'BETTING', 
+        currentDice: initialDice,
+        round: 1,
+        myScore: 100,
+        opponentScore: 100,
+        timeRemaining: 10,
+      });
+      const stateAfter = useGameState.getState();
+      console.log(`[STATE] startGame completed | Dice: ${stateAfter.currentDice} | Round: ${stateAfter.round} | Timer: ${stateAfter.timeRemaining}`);
+      if (stateAfter.currentDice !== initialDice) {
+        console.error(`[STATE] DICE MISMATCH in startGame! Expected ${initialDice}, got ${stateAfter.currentDice}`);
+      }
+    },
+    setCurrentDice: (dice) => {
+      const stateBefore = useGameState.getState();
+      console.log(`[DICE STATE] setCurrentDice called | New dice: ${dice} | Previous dice: ${stateBefore.currentDice}`);
+      set((state) => ({ 
+        currentDice: dice, 
+        previousDice: state.currentDice 
+      }));
+      const stateAfter = useGameState.getState();
+      console.log(`[DICE STATE] setCurrentDice completed | Current dice: ${stateAfter.currentDice} | Previous dice: ${stateAfter.previousDice}`);
+      if (stateAfter.currentDice !== dice) {
+        console.error(`[DICE STATE] MISMATCH! Expected ${dice}, got ${stateAfter.currentDice}`);
+      }
+    },
     setMyBet: (bet) => set({ myBet: bet }),
     setOpponentBet: (bet) => set({ opponentBet: bet }),
     lockBet: () => set({ betLocked: true }),
     unlockBet: () => set({ betLocked: false }),
-    setTimeRemaining: (seconds) => set({ timeRemaining: seconds }),
+    setTimeRemaining: (seconds) => {
+      const stateBefore = useGameState.getState();
+      console.log(`[TIMER STATE] setTimeRemaining called | New: ${seconds}s | Previous: ${stateBefore.timeRemaining}s | Round: ${stateBefore.round}`);
+      set({ timeRemaining: seconds });
+      const stateAfter = useGameState.getState();
+      console.log(`[TIMER STATE] setTimeRemaining completed | Current: ${stateAfter.timeRemaining}s | Round: ${stateAfter.round}`);
+      if (stateAfter.timeRemaining !== seconds) {
+        console.error(`[TIMER STATE] MISMATCH! Expected ${seconds}, got ${stateAfter.timeRemaining}`);
+      }
+    },
     setGamePhase: (phase) => set({ gamePhase: phase }),
-    updateScores: (myScore, opponentScore) => set({ myScore, opponentScore }),
+    updateScores: (myScore, opponentScore) => {
+      set((state) => {
+        console.log(`[STATE UPDATE] updateScores called:`);
+        console.log(`[STATE UPDATE]   Previous: My=${state.myScore}, Opp=${state.opponentScore}`);
+        console.log(`[STATE UPDATE]   New: My=${myScore}, Opp=${opponentScore}`);
+        return { myScore, opponentScore };
+      });
+      const newState = useGameState.getState();
+      console.log(`[STATE UPDATE]   After update: My=${newState.myScore}, Opp=${newState.opponentScore}`);
+    },
     setWinStreak: (streak) => set({ winStreak: streak }),
     incrementRound: () => set((state) => ({ round: state.round + 1 })),
     setLastRoundResults: (results) => set({ lastRoundResults: results }),

@@ -24,23 +24,32 @@ export default function HomeScreen() {
   };
 
   const handleJoinGame = async () => {
+    console.log(`[UI] handleJoinGame called | Room code: ${roomCode} | Length: ${roomCode.length}`);
+    
     if (roomCode.length !== 6) {
+      console.log(`[UI] Invalid room code length: ${roomCode.length}`);
       Alert.alert('Invalid Code', 'Please enter a 6-digit room code');
       return;
     }
 
     try {
+      console.log(`[UI] Attempting to join room: ${roomCode}`);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const success = await roomManager.joinRoom(roomCode);
+      console.log(`[UI] joinRoom returned: ${success}`);
+      
       if (success) {
+        console.log(`[UI] Join successful, setting room state and navigating to lobby`);
         actions.setRoom(roomCode, 'guest', useGameState.getState().playerId);
+        console.log(`[UI] Navigating to /lobby`);
         router.push('/lobby');
       } else {
+        console.error(`[UI] Join failed, showing error alert`);
         Alert.alert('Error', 'Failed to join room. Please check the code and try again.');
       }
     } catch (error) {
+      console.error(`[UI] Exception during join:`, error);
       Alert.alert('Error', 'Failed to join room. Please try again.');
-      console.error(error);
     }
   };
 
