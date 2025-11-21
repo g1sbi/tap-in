@@ -61,23 +61,23 @@ export default function Dice({ value, size = 120, animated = false }: DiceProps)
     if (animated) {
       rotationX.value = withSequence(
         withRepeat(
-          withTiming(360, { duration: 200 }),
+          withTiming(360, { duration: 200, reduceMotion: false }),
           5,
           false
         ),
-        withTiming(0, { duration: 300 })
+        withTiming(0, { duration: 300, reduceMotion: false })
       );
       rotationY.value = withSequence(
         withRepeat(
-          withTiming(360, { duration: 250 }),
+          withTiming(360, { duration: 250, reduceMotion: false }),
           5,
           false
         ),
-        withTiming(0, { duration: 300 })
+        withTiming(0, { duration: 300, reduceMotion: false })
       );
       scale.value = withSequence(
-        withTiming(1.2, { duration: 100 }),
-        withTiming(1, { duration: 200 })
+        withTiming(1.2, { duration: 100, reduceMotion: false }),
+        withTiming(1, { duration: 200, reduceMotion: false })
       );
     }
   }, [value, animated]);

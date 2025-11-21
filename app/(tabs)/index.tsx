@@ -3,7 +3,7 @@ import { roomManager } from '@/lib/room-manager';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
@@ -50,46 +50,41 @@ export default function HomeScreen() {
         style={styles.keyboardAvoidingView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}>
-          <View style={styles.content}>
-            <View style={styles.header}>
-              <Text style={styles.title}>Higher Lower Dice</Text>
-              <Text style={styles.subtitle}>Simultaneous Multiplayer Betting</Text>
-            </View>
+        <View style={styles.content}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Higher Lower Dice</Text>
+            <Text style={styles.subtitle}>Simultaneous Multiplayer Betting</Text>
+          </View>
 
-            <View style={styles.diceContainer}>
-              <View style={styles.dicePlaceholder}>
-                <Text style={styles.diceEmoji}>🎲</Text>
-              </View>
-            </View>
-
-            <View style={styles.actions}>
-              <TouchableOpacity style={styles.primaryButton} onPress={handleHostGame}>
-                <Text style={styles.primaryButtonText}>HOST GAME</Text>
-              </TouchableOpacity>
-
-              <View style={styles.joinSection}>
-                <TextInput
-                  style={styles.codeInput}
-                  value={roomCode}
-                  onChangeText={setRoomCode}
-                  placeholder="Enter 6-digit code"
-                  placeholderTextColor="#666"
-                  maxLength={6}
-                  keyboardType="number-pad"
-                  returnKeyType="done"
-                  onSubmitEditing={handleJoinGame}
-                />
-                <TouchableOpacity style={styles.joinButton} onPress={handleJoinGame}>
-                  <Text style={styles.joinButtonText}>JOIN GAME</Text>
-                </TouchableOpacity>
-              </View>
+          <View style={styles.diceContainer}>
+            <View style={styles.dicePlaceholder}>
+              <Text style={styles.diceEmoji}>🎲</Text>
             </View>
           </View>
-        </ScrollView>
+
+          <View style={styles.actions}>
+            <TouchableOpacity style={styles.primaryButton} onPress={handleHostGame}>
+              <Text style={styles.primaryButtonText}>HOST GAME</Text>
+            </TouchableOpacity>
+
+            <View style={styles.joinSection}>
+              <TextInput
+                style={styles.codeInput}
+                value={roomCode}
+                onChangeText={setRoomCode}
+                placeholder="Enter 6-digit code"
+                placeholderTextColor="#666"
+                maxLength={6}
+                keyboardType="number-pad"
+                returnKeyType="done"
+                onSubmitEditing={handleJoinGame}
+              />
+              <TouchableOpacity style={styles.joinButton} onPress={handleJoinGame}>
+                <Text style={styles.joinButtonText}>JOIN GAME</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -103,91 +98,91 @@ const styles = StyleSheet.create({
   keyboardAvoidingView: {
     flex: 1,
   },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    minHeight: '100%',
-  },
   content: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 24,
-    gap: 48,
-    paddingBottom: 48,
+    padding: 20,
+    paddingTop: 40,
+    paddingBottom: 20,
   },
   header: {
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
+    flex: 0.3,
+    justifyContent: 'center',
   },
   title: {
-    fontSize: 42,
+    fontSize: 36,
     fontWeight: 'bold',
     color: '#FFFFFF',
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#888',
     textAlign: 'center',
   },
   diceContainer: {
     alignItems: 'center',
     justifyContent: 'center',
+    flex: 0.4,
   },
   dicePlaceholder: {
-    width: 120,
-    height: 120,
-    borderRadius: 24,
+    width: 100,
+    height: 100,
+    borderRadius: 20,
     backgroundColor: '#1A1A1A',
     alignItems: 'center',
     justifyContent: 'center',
   },
   diceEmoji: {
-    fontSize: 64,
+    fontSize: 56,
   },
   actions: {
     width: '100%',
-    gap: 24,
+    gap: 16,
+    flex: 0.3,
+    justifyContent: 'flex-end',
   },
   primaryButton: {
     backgroundColor: '#00D4FF',
-    paddingVertical: 20,
+    paddingVertical: 16,
     paddingHorizontal: 32,
-    borderRadius: 16,
+    borderRadius: 14,
     alignItems: 'center',
   },
   primaryButtonText: {
     color: '#000000',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    letterSpacing: 2,
+    letterSpacing: 1.5,
   },
   joinSection: {
-    gap: 12,
+    gap: 10,
   },
   codeInput: {
     backgroundColor: '#1A1A1A',
     borderWidth: 2,
     borderColor: '#2A2A2A',
     borderRadius: 12,
-    padding: 16,
+    padding: 14,
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 16,
     textAlign: 'center',
-    letterSpacing: 4,
+    letterSpacing: 3,
   },
   joinButton: {
     backgroundColor: '#FF00FF',
-    paddingVertical: 16,
+    paddingVertical: 14,
     paddingHorizontal: 32,
     borderRadius: 12,
     alignItems: 'center',
   },
   joinButtonText: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    letterSpacing: 2,
+    letterSpacing: 1.5,
   },
 });

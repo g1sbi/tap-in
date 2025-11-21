@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useGameState } from '@/lib/game-state';
@@ -15,7 +15,6 @@ export default function GameScreen() {
   const router = useRouter();
   const {
     currentDice,
-    previousDice,
     round,
     myScore,
     opponentScore,
@@ -25,6 +24,9 @@ export default function GameScreen() {
     timeRemaining,
     gamePhase,
     winStreak,
+    gameWinner,
+    gameOverReason,
+    playerId,
     actions,
   } = useGameState();
 
@@ -35,15 +37,11 @@ export default function GameScreen() {
   const [showResults, setShowResults] = useState(false);
   const isRushRound = round % 5 === 0 && round > 0;
 
-  useEffect(() => {
-    if (gamePhase === 'GAME_OVER') {
-      setTimeout(() => {
-        router.push('/');
-        actions.reset();
-        roomManager.leaveRoom();
-      }, 3000);
-    }
-  }, [gamePhase]);
+  const handleQuit = async () => {
+    await roomManager.leaveRoom();
+    actions.reset();
+    router.push('/');
+  };
 
   useEffect(() => {
     if (gamePhase === 'RESULTS' && lastRoundResults) {
@@ -87,7 +85,7 @@ export default function GameScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <View style={styles.content}>
         <View style={styles.opponentArea}>
           <PlayerInfo
             points={opponentScore}
@@ -107,13 +105,8 @@ export default function GameScreen() {
         </View>
 
         <View style={styles.diceSection}>
-          {previousDice && (
-            <View style={styles.previousDice}>
-              <Dice value={previousDice} size={60} />
-            </View>
-          )}
           <View style={styles.currentDice}>
-            <Dice value={currentDice} size={140} animated={gamePhase === 'REVEALING'} />
+            <Dice value={currentDice} size={120} animated={gamePhase === 'REVEALING'} />
           </View>
           <View style={styles.timerContainer}>
             {gamePhase === 'BETTING' ? (
@@ -147,7 +140,7 @@ export default function GameScreen() {
         <View style={styles.myStats}>
           <PlayerInfo points={myScore} winStreak={winStreak} round={round} />
         </View>
-      </ScrollView>
+      </View>
 
       {showResults && lastRoundResults && myResult && opponentResult && (
         <ResultsOverlay
@@ -164,10 +157,54 @@ export default function GameScreen() {
 
       {gamePhase === 'GAME_OVER' && (
         <View style={styles.gameOverOverlay}>
-          <Text style={styles.gameOverText}>Game Over!</Text>
-          <Text style={styles.finalScore}>
-            You: {myScore} | Opponent: {opponentScore}
-          </Text>
+          <View style={styles.gameOverContent}>
+            <Text style={styles.gameOverTitle}>Game Over!</Text>
+            
+            {gameWinner === playerId ? (
+              <View style={styles.winnerContainer}>
+                <Text style={styles.winnerText}>🎉 YOU WIN! 🎉</Text>
+                <Text style={styles.winnerReason}>
+                  {gameOverReason === 'points_threshold' && 'Reached 300 points!'}
+                  {gameOverReason === 'opponent_zero' && 'Opponent eliminated!'}
+                  {gameOverReason === 'rounds_complete' && 'Most points after 20 rounds!'}
+                  {gameOverReason === 'opponent_disconnected' && 'Opponent disconnected!'}
+                </Text>
+              </View>
+            ) : gameWinner ? (
+              <View style={styles.loserContainer}>
+                <Text style={styles.loserText}>😔 You Lost</Text>
+                <Text style={styles.loserReason}>
+                  {gameOverReason === 'points_threshold' && 'Opponent reached 300 points'}
+                  {gameOverReason === 'opponent_zero' && 'You were eliminated'}
+                  {gameOverReason === 'rounds_complete' && 'Opponent had more points'}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.drawContainer}>
+                <Text style={styles.drawText}>🤝 Draw</Text>
+                <Text style={styles.drawReason}>Equal points after 20 rounds</Text>
+              </View>
+            )}
+            
+            <View style={styles.finalScoresContainer}>
+              <View style={styles.scoreRow}>
+                <Text style={styles.scoreLabel}>Your Score:</Text>
+                <Text style={[styles.scoreValue, gameWinner === playerId && styles.winnerScore]}>
+                  {myScore}
+                </Text>
+              </View>
+              <View style={styles.scoreRow}>
+                <Text style={styles.scoreLabel}>Opponent Score:</Text>
+                <Text style={[styles.scoreValue, gameWinner && gameWinner !== playerId && styles.winnerScore]}>
+                  {opponentScore}
+                </Text>
+              </View>
+            </View>
+            
+            <TouchableOpacity style={styles.quitButton} onPress={handleQuit}>
+              <Text style={styles.quitButtonText}>QUIT</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
     </SafeAreaView>
@@ -179,85 +216,189 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000000',
   },
-  scrollContent: {
-    flexGrow: 1,
-    padding: 16,
-    gap: 24,
+  content: {
+    flex: 1,
+    padding: 12,
+    gap: 8,
   },
   opponentArea: {
-    gap: 12,
+    gap: 6,
+    flex: 0.2,
   },
   betStatus: {
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 4,
   },
   lockedIndicator: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
     backgroundColor: '#1A3A1A',
   },
   lockedText: {
     color: '#00FF88',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
   },
   thinkingText: {
     color: '#666',
-    fontSize: 14,
+    fontSize: 12,
     fontStyle: 'italic',
   },
   diceSection: {
     alignItems: 'center',
-    gap: 16,
-    paddingVertical: 24,
-  },
-  previousDice: {
-    opacity: 0.5,
+    justifyContent: 'center',
+    gap: 8,
+    flex: 0.3,
   },
   currentDice: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   timerContainer: {
-    minHeight: 60,
+    height: 50,
     alignItems: 'center',
     justifyContent: 'center',
   },
   rollingText: {
-    fontSize: 24,
+    fontSize: 20,
     color: '#FFFFFF',
     fontWeight: '600',
   },
   bettingArea: {
-    gap: 16,
+    gap: 12,
+    flex: 0.3,
+    justifyContent: 'center',
   },
   waitingContainer: {
-    padding: 16,
+    padding: 12,
     alignItems: 'center',
   },
   waitingText: {
     color: '#888',
-    fontSize: 16,
+    fontSize: 14,
   },
   myStats: {
-    marginTop: 'auto',
+    flex: 0.2,
   },
   gameOverOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.95)',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 16,
+    padding: 24,
   },
-  gameOverText: {
-    fontSize: 48,
+  gameOverContent: {
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+    gap: 24,
+  },
+  gameOverTitle: {
+    fontSize: 42,
     fontWeight: 'bold',
     color: '#FFFFFF',
+    marginBottom: 8,
   },
-  finalScore: {
-    fontSize: 24,
+  winnerContainer: {
+    alignItems: 'center',
+    gap: 8,
+    padding: 20,
+    borderRadius: 16,
+    backgroundColor: '#1A3A1A',
+    borderWidth: 3,
+    borderColor: '#00FF88',
+    width: '100%',
+  },
+  winnerText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#00FF88',
+  },
+  winnerReason: {
+    fontSize: 16,
+    color: '#88FFAA',
+    textAlign: 'center',
+  },
+  loserContainer: {
+    alignItems: 'center',
+    gap: 8,
+    padding: 20,
+    borderRadius: 16,
+    backgroundColor: '#3A1A1A',
+    borderWidth: 3,
+    borderColor: '#FF4458',
+    width: '100%',
+  },
+  loserText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FF4458',
+  },
+  loserReason: {
+    fontSize: 16,
+    color: '#FF8888',
+    textAlign: 'center',
+  },
+  drawContainer: {
+    alignItems: 'center',
+    gap: 8,
+    padding: 20,
+    borderRadius: 16,
+    backgroundColor: '#3A3A1A',
+    borderWidth: 3,
+    borderColor: '#FFD700',
+    width: '100%',
+  },
+  drawText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFD700',
+  },
+  drawReason: {
+    fontSize: 16,
+    color: '#FFE888',
+    textAlign: 'center',
+  },
+  finalScoresContainer: {
+    width: '100%',
+    gap: 16,
+    padding: 20,
+    borderRadius: 12,
+    backgroundColor: '#1A1A1A',
+  },
+  scoreRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  scoreLabel: {
+    fontSize: 18,
     color: '#888',
+    fontWeight: '600',
+  },
+  scoreValue: {
+    fontSize: 24,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  winnerScore: {
+    color: '#00FF88',
+  },
+  quitButton: {
+    marginTop: 8,
+    backgroundColor: '#FF4458',
+    paddingVertical: 16,
+    paddingHorizontal: 48,
+    borderRadius: 12,
+    width: '100%',
+    alignItems: 'center',
+  },
+  quitButtonText: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: 'bold',
+    letterSpacing: 2,
   },
 });
 

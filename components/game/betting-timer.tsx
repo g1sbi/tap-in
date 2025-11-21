@@ -20,19 +20,19 @@ interface BettingTimerProps {
 export default function BettingTimer({ seconds, onExpire, isRushRound = false }: BettingTimerProps) {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
+  const secondsValue = useSharedValue(seconds);
 
   useEffect(() => {
-    if (seconds <= 3) {
+    secondsValue.value = seconds;
+    if (seconds <= 3 && seconds > 0) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-  }, [seconds]);
-
-  useEffect(() => {
-    const speed = isRushRound ? 200 : 300 / (11 - seconds);
+    
+    const speed = isRushRound ? 200 : Math.max(100, 300 / (11 - seconds));
     scale.value = withRepeat(
       withSequence(
-        withTiming(1.1, { duration: speed }),
-        withTiming(1, { duration: speed })
+        withTiming(1.1, { duration: speed, reduceMotion: false }),
+        withTiming(1, { duration: speed, reduceMotion: false })
       ),
       -1,
       true
@@ -40,8 +40,9 @@ export default function BettingTimer({ seconds, onExpire, isRushRound = false }:
   }, [seconds, isRushRound]);
 
   const animatedStyle = useAnimatedStyle(() => {
+    const currentSeconds = secondsValue.value;
     const colorInterpolation = interpolate(
-      seconds,
+      currentSeconds,
       [0, 3, 10],
       [1, 1, 0],
       Extrapolate.CLAMP
@@ -54,13 +55,17 @@ export default function BettingTimer({ seconds, onExpire, isRushRound = false }:
     };
   });
 
-  if (seconds <= 0 && onExpire) {
-    onExpire();
-  }
+  useEffect(() => {
+    if (seconds <= 0 && onExpire) {
+      onExpire();
+    }
+  }, [seconds, onExpire]);
+
+  const displaySeconds = Math.max(0, seconds);
 
   return (
     <Animated.Text style={[styles.timer, animatedStyle, { fontSize: isRushRound ? 56 : 48 }]}>
-      {seconds}
+      {displaySeconds}
     </Animated.Text>
   );
 }

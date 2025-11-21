@@ -26,6 +26,8 @@ interface GameState {
   
   winStreak: number;
   lastRoundResults: RoundResults | null;
+  gameWinner: string | null;
+  gameOverReason: string | null;
   
   actions: {
     setRoom: (code: string, role: PlayerRole, playerId: string) => void;
@@ -42,6 +44,7 @@ interface GameState {
     setWinStreak: (streak: number) => void;
     incrementRound: () => void;
     setLastRoundResults: (results: RoundResults | null) => void;
+    setGameWinner: (winner: string | null, reason: string | null) => void;
     reset: () => void;
   };
 }
@@ -70,6 +73,8 @@ export const useGameState = create<GameState>((set) => ({
   
   winStreak: 0,
   lastRoundResults: null,
+  gameWinner: null,
+  gameOverReason: null,
   
   actions: {
     setRoom: (code, role, playerId) => set({ roomCode: code, playerRole: role, playerId }),
@@ -96,6 +101,7 @@ export const useGameState = create<GameState>((set) => ({
     setWinStreak: (streak) => set({ winStreak: streak }),
     incrementRound: () => set((state) => ({ round: state.round + 1 })),
     setLastRoundResults: (results) => set({ lastRoundResults: results }),
+    setGameWinner: (winner, reason) => set({ gameWinner: winner, gameOverReason: reason }),
     reset: () => set({
       roomCode: null,
       playerRole: null,
@@ -112,6 +118,8 @@ export const useGameState = create<GameState>((set) => ({
       gamePhase: 'LOBBY',
       winStreak: 0,
       lastRoundResults: null,
+      gameWinner: null,
+      gameOverReason: null,
     }),
   },
 }));

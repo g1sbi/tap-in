@@ -21,7 +21,7 @@ export default function LobbyScreen() {
 
   useEffect(() => {
     pulse.value = withRepeat(
-      withTiming(1.1, { duration: 1000 }),
+      withTiming(1.1, { duration: 1000, reduceMotion: false }),
       -1,
       true
     );
@@ -30,13 +30,14 @@ export default function LobbyScreen() {
   useEffect(() => {
     if (opponentId && countdown === null) {
       setCountdown(3);
+    }
+  }, [opponentId]);
+
+  useEffect(() => {
+    if (countdown !== null && countdown > 0) {
       const interval = setInterval(() => {
         setCountdown((prev) => {
           if (prev === null || prev <= 1) {
-            clearInterval(interval);
-            if (prev === 1) {
-              router.push('/game');
-            }
             return null;
           }
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -44,8 +45,10 @@ export default function LobbyScreen() {
         });
       }, 1000);
       return () => clearInterval(interval);
+    } else if (countdown === null && opponentId) {
+      router.push('/game');
     }
-  }, [opponentId]);
+  }, [countdown, opponentId]);
 
   const handleLeave = async () => {
     Alert.alert(

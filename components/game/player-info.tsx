@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -6,6 +6,8 @@ import Animated, {
   withTiming,
   withSpring,
   interpolate,
+  useAnimatedReaction,
+  runOnJS,
 } from 'react-native-reanimated';
 
 interface PlayerInfoProps {
@@ -25,21 +27,27 @@ export default function PlayerInfo({
 }: PlayerInfoProps) {
   const animatedPoints = useSharedValue(points);
   const scale = useSharedValue(1);
+  const [displayPoints, setDisplayPoints] = useState(points);
 
   useEffect(() => {
-    animatedPoints.value = withTiming(points, { duration: 500 });
-    scale.value = withSpring(1.1, { damping: 8 }, () => {
-      scale.value = withSpring(1, { damping: 8 });
+    animatedPoints.value = withTiming(points, { duration: 500, reduceMotion: false });
+    scale.value = withSpring(1.1, { damping: 8, reduceMotion: false }, () => {
+      scale.value = withSpring(1, { damping: 8, reduceMotion: false });
     });
   }, [points]);
+
+  useAnimatedReaction(
+    () => animatedPoints.value,
+    (value) => {
+      runOnJS(setDisplayPoints)(Math.max(0, Math.floor(value)));
+    }
+  );
 
   const pointsStyle = useAnimatedStyle(() => {
     return {
       transform: [{ scale: scale.value }],
     };
   });
-
-  const displayPoints = Math.max(0, Math.floor(animatedPoints.value));
 
   return (
     <View style={[styles.container, isOpponent && styles.opponentContainer]}>
@@ -70,10 +78,10 @@ export default function PlayerInfo({
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    borderRadius: 16,
+    padding: 12,
+    borderRadius: 12,
     backgroundColor: '#1A1A1A',
-    gap: 12,
+    gap: 8,
   },
   opponentContainer: {
     backgroundColor: '#2A1A2A',
@@ -82,30 +90,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   label: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#888',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   points: {
-    fontSize: 36,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 24,
+    gap: 20,
   },
   stat: {
     alignItems: 'center',
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 10,
     color: '#666',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   statValue: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
   },

@@ -7,7 +7,7 @@ const config = getDefaultConfig(__dirname);
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (moduleName === 'ws') {
     return {
-      filePath: path.resolve(__dirname, 'app/ws-polyfill.js'),
+      filePath: path.resolve(__dirname, 'polyfills/ws-polyfill.js'),
       type: 'sourceFile',
     };
   }
@@ -45,7 +45,7 @@ config.resolver.extraNodeModules = {
   net: require.resolve('net-browserify'),
   tls: require.resolve('tls-browserify'),
   crypto: require.resolve('crypto-browserify'),
-  ws: path.resolve(__dirname, 'app/ws-polyfill.js'),
+  ws: path.resolve(__dirname, 'polyfills/ws-polyfill.js'),
 };
 
 config.resolver.blockList = [

@@ -40,25 +40,25 @@ export default function ResultsOverlay({
   const myTranslateY = useSharedValue(50);
 
   useEffect(() => {
-    opponentOpacity.value = withTiming(1, { duration: 300 });
-    opponentTranslateY.value = withSpring(0, { damping: 12 });
+    opponentOpacity.value = withTiming(1, { duration: 300, reduceMotion: false });
+    opponentTranslateY.value = withSpring(0, { damping: 12, reduceMotion: false });
 
     setTimeout(() => {
-      diceScale.value = withSpring(1, { damping: 8 });
+      diceScale.value = withSpring(1, { damping: 8, reduceMotion: false });
       diceRotation.value = withSequence(
-        withTiming(360, { duration: 400 }),
-        withTiming(0, { duration: 0 })
+        withTiming(360, { duration: 400, reduceMotion: false }),
+        withTiming(0, { duration: 0, reduceMotion: false })
       );
     }, 200);
 
     setTimeout(() => {
-      myOpacity.value = withTiming(1, { duration: 300 });
-      myTranslateY.value = withSpring(0, { damping: 12 });
+      myOpacity.value = withTiming(1, { duration: 300, reduceMotion: false });
+      myTranslateY.value = withSpring(0, { damping: 12, reduceMotion: false });
     }, 600);
 
     setTimeout(() => {
       onDismiss();
-    }, 2000);
+    }, 4000);
   }, []);
 
   const opponentStyle = useAnimatedStyle(() => ({

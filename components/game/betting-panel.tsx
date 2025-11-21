@@ -91,26 +91,26 @@ export default function BettingPanel({ maxAmount, onBet, disabled = false, locke
 
 const styles = StyleSheet.create({
   container: {
-    gap: 24,
+    gap: 16,
   },
   amountSection: {
-    gap: 12,
+    gap: 8,
   },
   label: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
     textAlign: 'center',
   },
   quickBets: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
     justifyContent: 'center',
   },
   betButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
     backgroundColor: '#2A2A2A',
     borderWidth: 2,
     borderColor: '#3A3A3A',
@@ -124,23 +124,23 @@ const styles = StyleSheet.create({
   },
   betButtonText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
   },
   betButtonTextSelected: {
     color: '#000000',
   },
   predictionSection: {
-    gap: 12,
+    gap: 8,
   },
   predictionButtons: {
     flexDirection: 'row',
-    gap: 16,
+    gap: 12,
   },
   predictionButton: {
     flex: 1,
-    paddingVertical: 20,
-    borderRadius: 16,
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -156,9 +156,9 @@ const styles = StyleSheet.create({
   },
   predictionButtonText: {
     color: '#FFFFFF',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    letterSpacing: 2,
+    letterSpacing: 1.5,
   },
 });
 

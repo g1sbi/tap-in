@@ -61,11 +61,13 @@ class RoomManager {
         }
       })
       .on('presence', { event: 'leave' }, ({ keyPresences }) => {
-        keyPresences.forEach((presence) => {
-          if (presence.key !== this.playerId) {
-            this.handleOpponentDisconnect();
-          }
-        });
+        if (keyPresences && Array.isArray(keyPresences)) {
+          keyPresences.forEach((presence) => {
+            if (presence.key !== this.playerId) {
+              this.handleOpponentDisconnect();
+            }
+          });
+        }
       })
       .on('broadcast', { event: 'message' }, ({ payload }) => {
         this.handleMessage(payload as RoomMessage);
@@ -112,11 +114,13 @@ class RoomManager {
         }
       })
       .on('presence', { event: 'leave' }, ({ keyPresences }) => {
-        keyPresences.forEach((presence) => {
-          if (presence.key !== this.playerId) {
-            this.handleOpponentDisconnect();
-          }
-        });
+        if (keyPresences && Array.isArray(keyPresences)) {
+          keyPresences.forEach((presence) => {
+            if (presence.key !== this.playerId) {
+              this.handleOpponentDisconnect();
+            }
+          });
+        }
       })
       .on('broadcast', { event: 'message' }, ({ payload }) => {
         this.handleMessage(payload as RoomMessage);
@@ -142,6 +146,11 @@ class RoomManager {
   }
 
   private startRound() {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+      this.timerInterval = null;
+    }
+
     this.round++;
     this.bets = {};
     useGameState.getState().actions.setGamePhase('BETTING');
@@ -149,17 +158,22 @@ class RoomManager {
     useGameState.getState().actions.setMyBet(null);
     useGameState.getState().actions.setOpponentBet(null);
     useGameState.getState().actions.incrementRound();
-    useGameState.getState().actions.setTimeRemaining(10);
 
     const isRushRound = this.round % 5 === 0;
     const timerDuration = isRushRound ? 5 : 10;
+    useGameState.getState().actions.setTimeRemaining(timerDuration);
 
     let timeLeft = timerDuration;
     this.timerInterval = setInterval(() => {
       timeLeft--;
+      if (timeLeft < 0) timeLeft = 0;
       useGameState.getState().actions.setTimeRemaining(timeLeft);
 
       if (timeLeft <= 0) {
+        if (this.timerInterval) {
+          clearInterval(this.timerInterval);
+          this.timerInterval = null;
+        }
         this.forceResolve();
       }
     }, 1000);
@@ -239,6 +253,8 @@ class RoomManager {
 
     const winCheck = checkWinConditions(this.scores, this.round);
     if (winCheck.gameOver) {
+      const winnerId = winCheck.winner || null;
+      useGameState.getState().actions.setGameWinner(winnerId, winCheck.reason || null);
       this.broadcast({
         type: 'game-over',
         data: {
@@ -273,9 +289,9 @@ class RoomManager {
       useGameState.getState().actions.setGamePhase('RESULTS');
 
       setTimeout(() => {
-        this.broadcast({ type: 'new-round' });
+        this.broadcast({ type: 'new-round', data: { dice: this.currentDice } });
         this.startRound();
-      }, 3000);
+      }, 5000);
     }, 500);
   }
 
@@ -330,6 +346,8 @@ class RoomManager {
         break;
 
       case 'game-over':
+        const winnerId = message.data.winner || null;
+        useGameState.getState().actions.setGameWinner(winnerId, message.data.reason || null);
         useGameState.getState().actions.setGamePhase('GAME_OVER');
         if (message.data.scores) {
           this.scores = message.data.scores;
@@ -345,6 +363,14 @@ class RoomManager {
 
       case 'new-round':
         if (!this.isHost) {
+          if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+          }
+          if (message.data?.dice) {
+            this.currentDice = message.data.dice;
+            useGameState.getState().actions.setCurrentDice(message.data.dice);
+          }
           this.startRound();
         }
         break;
@@ -352,6 +378,8 @@ class RoomManager {
   }
 
   private handleOpponentDisconnect() {
+    const playerId = useGameState.getState().playerId;
+    useGameState.getState().actions.setGameWinner(playerId, 'opponent_disconnected');
     useGameState.getState().actions.setGamePhase('GAME_OVER');
   }
 
