@@ -4,10 +4,11 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSpring,
+  withSequence,
   interpolate,
   useAnimatedReaction,
   runOnJS,
+  Easing,
 } from 'react-native-reanimated';
 
 interface PlayerInfoProps {
@@ -31,9 +32,10 @@ export default function PlayerInfo({
 
   useEffect(() => {
     animatedPoints.value = withTiming(points, { duration: 500, reduceMotion: false });
-    scale.value = withSpring(1.1, { damping: 8, reduceMotion: false }, () => {
-      scale.value = withSpring(1, { damping: 8, reduceMotion: false });
-    });
+    scale.value = withSequence(
+      withTiming(1.05, { duration: 150, easing: Easing.out(Easing.quad), reduceMotion: false }),
+      withTiming(1, { duration: 150, reduceMotion: false })
+    );
   }, [points]);
 
   useAnimatedReaction(

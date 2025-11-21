@@ -486,8 +486,8 @@ class RoomManager {
       setTimeout(() => {
         this.broadcast({ type: 'new-round', data: { dice: this.currentDice } });
         this.startRound();
-      }, 5000);
-    }, 500);
+      }, 6000);
+    }, 800);
   }
 
   private handleMessage(message: RoomMessage) {

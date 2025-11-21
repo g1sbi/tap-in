@@ -61,16 +61,16 @@ export default function Dice({ value, size = 120, animated = false }: DiceProps)
     if (animated) {
       rotationX.value = withSequence(
         withRepeat(
-          withTiming(360, { duration: 200, reduceMotion: false }),
-          5,
+          withTiming(360, { duration: 150, reduceMotion: false }),
+          3,
           false
         ),
         withTiming(0, { duration: 300, reduceMotion: false })
       );
       rotationY.value = withSequence(
         withRepeat(
-          withTiming(360, { duration: 250, reduceMotion: false }),
-          5,
+          withTiming(360, { duration: 180, reduceMotion: false }),
+          3,
           false
         ),
         withTiming(0, { duration: 300, reduceMotion: false })

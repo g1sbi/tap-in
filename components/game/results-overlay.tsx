@@ -4,9 +4,9 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSpring,
   withSequence,
   interpolate,
+  Easing,
 } from 'react-native-reanimated';
 import Dice from './dice';
 import type { RoundResult } from '@/lib/game-logic';
@@ -41,10 +41,10 @@ export default function ResultsOverlay({
 
   useEffect(() => {
     opponentOpacity.value = withTiming(1, { duration: 300, reduceMotion: false });
-    opponentTranslateY.value = withSpring(0, { damping: 12, reduceMotion: false });
+    opponentTranslateY.value = withTiming(0, { duration: 250, easing: Easing.out(Easing.cubic), reduceMotion: false });
 
     setTimeout(() => {
-      diceScale.value = withSpring(1, { damping: 8, reduceMotion: false });
+      diceScale.value = withTiming(1, { duration: 200, easing: Easing.out(Easing.cubic), reduceMotion: false });
       diceRotation.value = withSequence(
         withTiming(360, { duration: 400, reduceMotion: false }),
         withTiming(0, { duration: 0, reduceMotion: false })
@@ -53,7 +53,7 @@ export default function ResultsOverlay({
 
     setTimeout(() => {
       myOpacity.value = withTiming(1, { duration: 300, reduceMotion: false });
-      myTranslateY.value = withSpring(0, { damping: 12, reduceMotion: false });
+      myTranslateY.value = withTiming(0, { duration: 250, easing: Easing.out(Easing.cubic), reduceMotion: false });
     }, 600);
 
     setTimeout(() => {
