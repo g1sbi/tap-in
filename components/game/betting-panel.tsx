@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import type { Prediction } from '@/lib/game-logic';
@@ -8,10 +8,17 @@ interface BettingPanelProps {
   onBet: (amount: number, prediction: Prediction) => void;
   disabled?: boolean;
   locked?: boolean;
+  currentDice: number;
 }
 
-export default function BettingPanel({ maxAmount, onBet, disabled = false, locked = false }: BettingPanelProps) {
+export default function BettingPanel({ maxAmount, onBet, disabled = false, locked = false, currentDice }: BettingPanelProps) {
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+  
+  useEffect(() => {
+    setSelectedAmount(null);
+  }, [currentDice]);
+  
+  const isEdgeCase = currentDice === 1 || currentDice === 6;
 
   const quickBets = [
     { label: '10', value: 10 },
@@ -61,28 +68,56 @@ export default function BettingPanel({ maxAmount, onBet, disabled = false, locke
 
       <View style={styles.predictionSection}>
         <Text style={styles.label}>Prediction</Text>
-        <View style={styles.predictionButtons}>
-          <TouchableOpacity
-            style={[
-              styles.predictionButton,
-              styles.higherButton,
-              (locked || disabled || selectedAmount === null) && styles.predictionButtonDisabled,
-            ]}
-            onPress={() => handlePrediction('higher')}
-            disabled={locked || disabled || selectedAmount === null}>
-            <Text style={styles.predictionButtonText}>HIGHER</Text>
-          </TouchableOpacity>
+        <View style={styles.predictionButtons} key={`prediction-${currentDice}`}>
+          {isEdgeCase ? (
+            <>
+              <TouchableOpacity
+                style={[
+                  styles.predictionButton,
+                  styles.higherButton,
+                  (locked || disabled || selectedAmount === null) && styles.predictionButtonDisabled,
+                ]}
+                onPress={() => handlePrediction('4-or-higher')}
+                disabled={locked || disabled || selectedAmount === null}>
+                <Text style={styles.predictionButtonText}>4 OR HIGHER</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.predictionButton,
-              styles.lowerButton,
-              (locked || disabled || selectedAmount === null) && styles.predictionButtonDisabled,
-            ]}
-            onPress={() => handlePrediction('lower')}
-            disabled={locked || disabled || selectedAmount === null}>
-            <Text style={styles.predictionButtonText}>LOWER</Text>
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.predictionButton,
+                  styles.lowerButton,
+                  (locked || disabled || selectedAmount === null) && styles.predictionButtonDisabled,
+                ]}
+                onPress={() => handlePrediction('3-or-lower')}
+                disabled={locked || disabled || selectedAmount === null}>
+                <Text style={styles.predictionButtonText}>3 OR LOWER</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <TouchableOpacity
+                style={[
+                  styles.predictionButton,
+                  styles.higherButton,
+                  (locked || disabled || selectedAmount === null) && styles.predictionButtonDisabled,
+                ]}
+                onPress={() => handlePrediction('higher')}
+                disabled={locked || disabled || selectedAmount === null}>
+                <Text style={styles.predictionButtonText}>HIGHER</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.predictionButton,
+                  styles.lowerButton,
+                  (locked || disabled || selectedAmount === null) && styles.predictionButtonDisabled,
+                ]}
+                onPress={() => handlePrediction('lower')}
+                disabled={locked || disabled || selectedAmount === null}>
+                <Text style={styles.predictionButtonText}>LOWER</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </View>
     </View>

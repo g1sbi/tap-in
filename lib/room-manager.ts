@@ -1,5 +1,5 @@
 import { RealtimeChannel } from '@supabase/supabase-js';
-import type { Bet } from './game-logic';
+import type { Bet, Prediction } from './game-logic';
 import { calculateRoundResults, checkWinConditions } from './game-logic';
 import { useGameState } from './game-state';
 import { supabase } from './supabase';
@@ -254,6 +254,7 @@ class RoomManager {
 
     this.round++;
     this.bets = {};
+    useGameState.getState().actions.setCurrentDice(this.currentDice);
     useGameState.getState().actions.setGamePhase('BETTING');
     useGameState.getState().actions.unlockBet();
     useGameState.getState().actions.setMyBet(null);
@@ -296,7 +297,7 @@ class RoomManager {
     console.log(`[TIMER] Round ${this.round} | Interval started | timerInterval: ${this.timerInterval ? 'set' : 'null'}`);
   }
 
-  lockBet(amount: number, prediction: 'higher' | 'lower') {
+  lockBet(amount: number, prediction: Prediction) {
     if (!this.playerId) return;
 
     const bet: Bet = {

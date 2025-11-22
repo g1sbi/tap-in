@@ -1,4 +1,4 @@
-export type Prediction = 'higher' | 'lower';
+export type Prediction = 'higher' | 'lower' | '4-or-higher' | '3-or-lower';
 export type RoundResult = 'win' | 'loss' | 'push';
 
 export interface Bet {
@@ -24,7 +24,15 @@ export function calculateRoundResult(
   newDice: number,
   prediction: Prediction
 ): RoundResult {
+  if (prediction === '4-or-higher') {
+    return newDice >= 4 ? 'win' : 'loss';
+  }
+  if (prediction === '3-or-lower') {
+    return newDice <= 3 ? 'win' : 'loss';
+  }
+  
   if (newDice === oldDice) return 'push';
+  
   if (prediction === 'higher' && newDice > oldDice) return 'win';
   if (prediction === 'lower' && newDice < oldDice) return 'win';
   return 'loss';
