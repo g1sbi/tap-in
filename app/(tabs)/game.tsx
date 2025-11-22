@@ -153,6 +153,7 @@ export default function GameScreen() {
               onBet={handleBet}
               disabled={betLocked}
               locked={betLocked}
+              currentDice={currentDice}
             />
           )}
           {betLocked && gamePhase === 'BETTING' && (
