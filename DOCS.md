@@ -114,6 +114,8 @@ Pure functions for game rules and calculations.
 **Key Functions:**
 
 - `calculateRoundResult(oldDice, newDice, prediction)`: Determines win/loss/push
+  - Supports 4 prediction types: `'higher'`, `'lower'`, `'4-or-higher'`, `'3-or-lower'`
+  - Edge case predictions ('4-or-higher', '3-or-lower') never result in push - always win or loss
 - `calculateBonuses(bets, oldDice, newDice)`: Calculates mirror, contrarian, speed bonuses
 - `calculateRoundResults(oldDice, newDice, bets)`: Complete round calculation
 - `checkWinConditions(scores, round)`: Checks for game end conditions
@@ -201,12 +203,15 @@ UI for selecting bet amount and prediction.
 - `onBet`: Callback with (amount, prediction)
 - `disabled`: Whether betting is disabled
 - `locked`: Whether bet is locked in
+- `currentDice`: Current dice value (determines which buttons to show)
 
 **Features:**
 - Quick bet buttons: 10, 25, 50%, ALL IN
-- HIGHER/LOWER prediction buttons
+- **Normal Mode** (dice 2-5): HIGHER/LOWER prediction buttons
+- **Edge Case Mode** (dice 1 or 6): 4 OR HIGHER / 3 OR LOWER buttons
 - Visual feedback for selections
 - Disabled state when locked or game phase changes
+- Auto-reset selection when dice changes
 
 ### Player Info (`components/game/player-info.tsx`)
 

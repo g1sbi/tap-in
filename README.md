@@ -64,7 +64,9 @@ npx expo start
 
 1. **Host a Game**: Tap "HOST GAME" to create a room and get a 6-digit code
 2. **Join a Game**: Enter the 6-digit code and tap "JOIN GAME"
-3. **Bet**: Choose your bet amount (10, 25, 50%, or ALL IN) and predict HIGHER or LOWER
+3. **Bet**: Choose your bet amount (10, 25, 50%, or ALL IN) and make your prediction:
+   - **Normal rounds** (dice 2-5): Predict HIGHER or LOWER
+   - **Edge cases** (dice 1 or 6): Choose 4 OR HIGHER or 3 OR LOWER (50/50 odds, no push)
 4. **Win**: Accumulate points by correctly predicting the next dice roll
 5. **Special Bonuses**:
    - **Mirror Bonus**: +10 points if both players bet the same direction and win
@@ -79,6 +81,8 @@ npx expo start
 - Correct prediction: +bet amount
 - Wrong prediction: -bet amount
 - Push (same number): bet returned, no change
+  - **Note**: Pushes only occur in normal rounds (dice 2-5)
+  - Edge case rounds (dice 1 or 6) have no pushes - always win or loss
 - Game ends when:
   - A player reaches 300 points
   - A player reaches 0 points
