@@ -26,6 +26,10 @@ export default function HomeScreen() {
   const handleJoinGame = async () => {
     console.log(`[UI] handleJoinGame called | Room code: ${roomCode} | Length: ${roomCode.length}`);
     
+    if (roomCode.length === 0) {
+      return;
+    }
+    
     if (roomCode.length !== 6) {
       console.log(`[UI] Invalid room code length: ${roomCode.length}`);
       Alert.alert('Invalid Code', 'Please enter a 6-digit room code');

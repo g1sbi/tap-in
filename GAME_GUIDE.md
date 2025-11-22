@@ -44,8 +44,12 @@ Higher Lower Dice is a fast-paced, simultaneous multiplayer betting game where y
      - **50%** - Half your current points
      - **ALL IN** - Bet everything you have
    - Make your prediction:
-     - **HIGHER** - Next dice will be greater than current
-     - **LOWER** - Next dice will be less than current
+     - **Normal Mode** (dice = 2, 3, 4, or 5):
+       - **HIGHER** - Next dice will be greater than current
+       - **LOWER** - Next dice will be less than current
+     - **Edge Case Mode** (dice = 1 or 6):
+       - **4 OR HIGHER** - Next dice will be 4, 5, or 6 (50% chance)
+       - **3 OR LOWER** - Next dice will be 1, 2, or 3 (50% chance)
    - Lock in your bet before time runs out
 
 3. **Dice Roll**
@@ -76,6 +80,7 @@ Higher Lower Dice is a fast-paced, simultaneous multiplayer betting game where y
 - **Push (Same Number)**: No points gained or lost
   - Your bet is returned, but you don't win or lose
   - Example: Current dice is 4, new dice is 4 → Push
+  - **Note**: Push only applies in Normal Mode (dice 2-5). In Edge Case Mode (dice 1 or 6), there are no pushes - outcomes are always win or loss
 
 ### Special Bonuses
 
@@ -167,9 +172,13 @@ The game ends immediately when any of these conditions are met:
    - Build your point total before taking risks
 
 2. **Read the Odds**
-   - **Dice is 1**: HIGHER is very likely (5 out of 6 chances)
-   - **Dice is 6**: LOWER is very likely (5 out of 6 chances)
-   - **Dice is 3 or 4**: Most balanced odds
+   - **Dice is 1 or 6** (Edge Case): Both options are 50/50:
+     - **4 OR HIGHER**: 50% chance (3 out of 6: rolls 4, 5, or 6)
+     - **3 OR LOWER**: 50% chance (3 out of 6: rolls 1, 2, or 3)
+     - **No push** - always win or lose
+   - **Dice is 2**: HIGHER more likely (4/6), LOWER less likely (1/6)
+   - **Dice is 3 or 4**: Most balanced between HIGHER and LOWER
+   - **Dice is 5**: LOWER more likely (4/6), HIGHER less likely (1/6)
 
 3. **Watch Your Opponent**
    - If opponent bets high amount, they're confident
@@ -210,28 +219,35 @@ The game ends immediately when any of these conditions are met:
 
 ## Understanding Probabilities
 
-### Dice Probabilities
+### Normal Mode (Dice = 2, 3, 4, or 5)
 
 When current dice is:
-- **1**: HIGHER = 83% chance (5/6), LOWER = 0% chance
-- **2**: HIGHER = 67% chance (4/6), LOWER = 17% chance (1/6)
-- **3**: HIGHER = 50% chance (3/6), LOWER = 33% chance (2/6)
-- **4**: HIGHER = 33% chance (2/6), LOWER = 50% chance (3/6)
-- **5**: HIGHER = 17% chance (1/6), LOWER = 67% chance (4/6)
-- **6**: HIGHER = 0% chance, LOWER = 83% chance (5/6)
+- **2**: HIGHER = 67% chance (4/6), LOWER = 17% chance (1/6), PUSH = 17% (1/6)
+- **3**: HIGHER = 50% chance (3/6), LOWER = 33% chance (2/6), PUSH = 17% (1/6)
+- **4**: HIGHER = 33% chance (2/6), LOWER = 50% chance (3/6), PUSH = 17% (1/6)
+- **5**: HIGHER = 17% chance (1/6), LOWER = 67% chance (4/6), PUSH = 17% (1/6)
+
+### Edge Case Mode (Dice = 1 or 6)
+
+When current dice is **1** or **6**:
+- **4 OR HIGHER**: 50% chance (3/6 - rolls 4, 5, or 6 win)
+- **3 OR LOWER**: 50% chance (3/6 - rolls 1, 2, or 3 win)
+- **No push possible** - outcomes are always win or loss
+- Perfect 50/50 odds make these rounds pure chance
 
 ### Push Probability
 
-- Always 16.7% chance (1/6) that new dice equals current dice
+- In Normal Mode: 16.7% chance (1/6) that new dice equals current dice
 - Push returns your bet but gives no points
+- In Edge Case Mode: No pushes - always win or lose
 
 ## Common Scenarios
 
-### Scenario 1: Safe Bet
-- Current dice: **1**
-- Your bet: 25 points on HIGHER
-- New dice: **4**
-- Result: **WIN** → +25 points
+### Scenario 1: Edge Case Bet
+- Current dice: **1** (Edge Case Mode)
+- Your bet: 25 points on **4 OR HIGHER**
+- New dice: **5**
+- Result: **WIN** → +25 points (5 is in range 4-6)
 
 ### Scenario 2: Risky Bet
 - Current dice: **4**
@@ -240,10 +256,16 @@ When current dice is:
 - Result: **LOSS** → -50 points
 
 ### Scenario 3: Push
-- Current dice: **3**
+- Current dice: **3** (Normal Mode)
 - Your bet: 30 points on HIGHER
 - New dice: **3**
 - Result: **PUSH** → 0 points (bet returned)
+
+### Scenario 3b: Edge Case - No Push
+- Current dice: **6** (Edge Case Mode)
+- Your bet: 30 points on **3 OR LOWER**
+- New dice: **6**
+- Result: **LOSS** → -30 points (6 is not in range 1-3, no push possible)
 
 ### Scenario 4: Mirror Bonus
 - Current dice: **2**
