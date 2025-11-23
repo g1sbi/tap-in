@@ -12,6 +12,7 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import { roomManager } from '@/lib/room-manager';
 import { useGameState } from '@/lib/game-state';
+import { GAME_CONSTANTS } from '@/lib/game-constants';
 
 export default function LobbyScreen() {
   const router = useRouter();

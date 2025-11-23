@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import type { Prediction } from '@/lib/game-logic';
+import { BET_AMOUNTS, EDGE_CASE_DICE, GAME_CONSTANTS } from '@/lib/game-constants';
 
 interface BettingPanelProps {
   maxAmount: number;
@@ -18,12 +19,12 @@ export default function BettingPanel({ maxAmount, onBet, disabled = false, locke
     setSelectedAmount(null);
   }, [currentDice]);
   
-  const isEdgeCase = currentDice === 1 || currentDice === 6;
+  const isEdgeCase = EDGE_CASE_DICE.includes(currentDice as typeof EDGE_CASE_DICE[number]);
 
   const quickBets = [
-    { label: '10', value: 10 },
-    { label: '25', value: 25 },
-    { label: '50%', value: Math.floor(maxAmount * 0.5) },
+    { label: '10', value: BET_AMOUNTS.SMALL },
+    { label: '25', value: BET_AMOUNTS.MEDIUM },
+    { label: '50%', value: Math.floor(maxAmount * BET_AMOUNTS.HALF_PERCENTAGE) },
     { label: 'ALL IN', value: maxAmount },
   ];
 

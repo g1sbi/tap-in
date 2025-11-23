@@ -1,5 +1,7 @@
 import { create } from 'zustand';
-import type { Bet, Prediction, RoundResults } from './game-logic';
+import { GAME_CONSTANTS } from './game-constants';
+import type { Bet, RoundResults } from './game-logic';
+import { logger } from './logger';
 
 export type GamePhase = 'LOBBY' | 'BETTING' | 'REVEALING' | 'RESULTS' | 'GAME_OVER';
 export type PlayerRole = 'host' | 'guest';
@@ -49,7 +51,14 @@ interface GameState {
   };
 }
 
-const generatePlayerId = () => `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+/**
+ * Generates a unique player ID.
+ * 
+ * @returns A unique player ID string
+ */
+const generatePlayerId = (): string => {
+  return `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+};
 
 export const useGameState = create<GameState>((set) => ({
   roomCode: null,
@@ -57,18 +66,18 @@ export const useGameState = create<GameState>((set) => ({
   playerId: generatePlayerId(),
   opponentId: null,
   
-  currentDice: 1,
+  currentDice: GAME_CONSTANTS.DICE_MIN,
   previousDice: null,
   round: 0,
   
-  myScore: 100,
-  opponentScore: 100,
+  myScore: GAME_CONSTANTS.INITIAL_SCORE,
+  opponentScore: GAME_CONSTANTS.INITIAL_SCORE,
   
   myBet: null,
   opponentBet: null,
   betLocked: false,
   
-  timeRemaining: 10,
+  timeRemaining: GAME_CONSTANTS.NORMAL_TIMER_DURATION,
   gamePhase: 'LOBBY',
   
   winStreak: 0,
@@ -80,33 +89,28 @@ export const useGameState = create<GameState>((set) => ({
     setRoom: (code, role, playerId) => set({ roomCode: code, playerRole: role, playerId }),
     setOpponent: (opponentId) => set({ opponentId }),
     startGame: (initialDice) => {
-      const stateBefore = useGameState.getState();
-      console.log(`[STATE] startGame called | Dice: ${initialDice} | Previous dice: ${stateBefore.currentDice}`);
+      logger.debug('GameState', `startGame called | Dice: ${initialDice}`);
       set({ 
         gamePhase: 'BETTING', 
         currentDice: initialDice,
-        round: 1,
-        myScore: 100,
-        opponentScore: 100,
-        timeRemaining: 10,
+        myScore: GAME_CONSTANTS.INITIAL_SCORE,
+        opponentScore: GAME_CONSTANTS.INITIAL_SCORE,
+        timeRemaining: GAME_CONSTANTS.NORMAL_TIMER_DURATION,
       });
       const stateAfter = useGameState.getState();
-      console.log(`[STATE] startGame completed | Dice: ${stateAfter.currentDice} | Round: ${stateAfter.round} | Timer: ${stateAfter.timeRemaining}`);
       if (stateAfter.currentDice !== initialDice) {
-        console.error(`[STATE] DICE MISMATCH in startGame! Expected ${initialDice}, got ${stateAfter.currentDice}`);
+        logger.error('GameState', `Dice mismatch! Expected ${initialDice}, got ${stateAfter.currentDice}`);
       }
     },
     setCurrentDice: (dice) => {
-      const stateBefore = useGameState.getState();
-      console.log(`[DICE STATE] setCurrentDice called | New dice: ${dice} | Previous dice: ${stateBefore.currentDice}`);
+      logger.debug('GameState', `setCurrentDice called | New dice: ${dice}`);
       set((state) => ({ 
         currentDice: dice, 
         previousDice: state.currentDice 
       }));
       const stateAfter = useGameState.getState();
-      console.log(`[DICE STATE] setCurrentDice completed | Current dice: ${stateAfter.currentDice} | Previous dice: ${stateAfter.previousDice}`);
       if (stateAfter.currentDice !== dice) {
-        console.error(`[DICE STATE] MISMATCH! Expected ${dice}, got ${stateAfter.currentDice}`);
+        logger.error('GameState', `Dice mismatch! Expected ${dice}, got ${stateAfter.currentDice}`);
       }
     },
     setMyBet: (bet) => set({ myBet: bet }),
@@ -114,25 +118,17 @@ export const useGameState = create<GameState>((set) => ({
     lockBet: () => set({ betLocked: true }),
     unlockBet: () => set({ betLocked: false }),
     setTimeRemaining: (seconds) => {
-      const stateBefore = useGameState.getState();
-      console.log(`[TIMER STATE] setTimeRemaining called | New: ${seconds}s | Previous: ${stateBefore.timeRemaining}s | Round: ${stateBefore.round}`);
+      logger.debug('GameState', `setTimeRemaining called | New: ${seconds}s`);
       set({ timeRemaining: seconds });
       const stateAfter = useGameState.getState();
-      console.log(`[TIMER STATE] setTimeRemaining completed | Current: ${stateAfter.timeRemaining}s | Round: ${stateAfter.round}`);
       if (stateAfter.timeRemaining !== seconds) {
-        console.error(`[TIMER STATE] MISMATCH! Expected ${seconds}, got ${stateAfter.timeRemaining}`);
+        logger.error('GameState', `Timer mismatch! Expected ${seconds}, got ${stateAfter.timeRemaining}`);
       }
     },
     setGamePhase: (phase) => set({ gamePhase: phase }),
     updateScores: (myScore, opponentScore) => {
-      set((state) => {
-        console.log(`[STATE UPDATE] updateScores called:`);
-        console.log(`[STATE UPDATE]   Previous: My=${state.myScore}, Opp=${state.opponentScore}`);
-        console.log(`[STATE UPDATE]   New: My=${myScore}, Opp=${opponentScore}`);
-        return { myScore, opponentScore };
-      });
-      const newState = useGameState.getState();
-      console.log(`[STATE UPDATE]   After update: My=${newState.myScore}, Opp=${newState.opponentScore}`);
+      logger.debug('GameState', `updateScores called | My: ${myScore}, Opp: ${opponentScore}`);
+      set({ myScore, opponentScore });
     },
     setWinStreak: (streak) => set({ winStreak: streak }),
     incrementRound: () => set((state) => ({ round: state.round + 1 })),
@@ -142,15 +138,15 @@ export const useGameState = create<GameState>((set) => ({
       roomCode: null,
       playerRole: null,
       opponentId: null,
-      currentDice: 1,
+      currentDice: GAME_CONSTANTS.DICE_MIN,
       previousDice: null,
       round: 0,
-      myScore: 100,
-      opponentScore: 100,
+      myScore: GAME_CONSTANTS.INITIAL_SCORE,
+      opponentScore: GAME_CONSTANTS.INITIAL_SCORE,
       myBet: null,
       opponentBet: null,
       betLocked: false,
-      timeRemaining: 10,
+      timeRemaining: GAME_CONSTANTS.NORMAL_TIMER_DURATION,
       gamePhase: 'LOBBY',
       winStreak: 0,
       lastRoundResults: null,

@@ -1,3 +1,5 @@
+import { BONUS_POINTS, GAME_CONSTANTS, type GameOverReason } from './game-constants';
+
 export type Prediction = 'higher' | 'lower' | '4-or-higher' | '3-or-lower';
 export type RoundResult = 'win' | 'loss' | 'push';
 
@@ -19,6 +21,20 @@ export interface RoundResults {
   };
 }
 
+export interface WinConditionResult {
+  gameOver: boolean;
+  winner?: string;
+  reason?: GameOverReason;
+}
+
+/**
+ * Calculates the result of a single round based on the dice roll and prediction.
+ * 
+ * @param oldDice - The previous dice value
+ * @param newDice - The new dice value rolled
+ * @param prediction - The player's prediction
+ * @returns The round result ('win', 'loss', or 'push')
+ */
 export function calculateRoundResult(
   oldDice: number,
   newDice: number,
@@ -38,6 +54,14 @@ export function calculateRoundResult(
   return 'loss';
 }
 
+/**
+ * Calculates bonus points for players based on their betting behavior.
+ * 
+ * @param bets - Object mapping player IDs to their bets
+ * @param oldDice - The previous dice value
+ * @param newDice - The new dice value rolled
+ * @returns Object mapping player IDs to their bonus points
+ */
 export function calculateBonuses(
   bets: { [playerId: string]: Bet },
   oldDice: number,
@@ -55,26 +79,37 @@ export function calculateBonuses(
   const result1 = calculateRoundResult(oldDice, newDice, bet1.prediction);
   const result2 = calculateRoundResult(oldDice, newDice, bet2.prediction);
 
+  // Mirror bonus: both players bet same direction and both win
   if (bet1.prediction === bet2.prediction && result1 === 'win' && result2 === 'win') {
-    bonuses[player1] = (bonuses[player1] || 0) + 10;
-    bonuses[player2] = (bonuses[player2] || 0) + 10;
+    bonuses[player1] = (bonuses[player1] || 0) + BONUS_POINTS.MIRROR;
+    bonuses[player2] = (bonuses[player2] || 0) + BONUS_POINTS.MIRROR;
   }
 
+  // Contrarian bonus: only this player wins (opponent loses)
   if (result1 === 'win' && result2 === 'loss') {
-    bonuses[player1] = (bonuses[player1] || 0) + 5;
+    bonuses[player1] = (bonuses[player1] || 0) + BONUS_POINTS.CONTRARIAN;
   }
   if (result2 === 'win' && result1 === 'loss') {
-    bonuses[player2] = (bonuses[player2] || 0) + 5;
+    bonuses[player2] = (bonuses[player2] || 0) + BONUS_POINTS.CONTRARIAN;
   }
 
+  // Speed bonus: first player to bet
   const sortedBets = Object.values(bets).sort((a, b) => a.timestamp - b.timestamp);
   if (sortedBets.length > 0) {
-    bonuses[sortedBets[0].playerId] = (bonuses[sortedBets[0].playerId] || 0) + 2;
+    bonuses[sortedBets[0].playerId] = (bonuses[sortedBets[0].playerId] || 0) + BONUS_POINTS.SPEED;
   }
 
   return bonuses;
 }
 
+/**
+ * Calculates the complete round results including points changes and bonuses.
+ * 
+ * @param oldDice - The previous dice value
+ * @param newDice - The new dice value rolled
+ * @param bets - Object mapping player IDs to their bets
+ * @returns The complete round results
+ */
 export function calculateRoundResults(
   oldDice: number,
   newDice: number,
@@ -106,10 +141,17 @@ export function calculateRoundResults(
   };
 }
 
+/**
+ * Checks if any win conditions have been met.
+ * 
+ * @param scores - Object mapping player IDs to their current scores
+ * @param round - The current round number
+ * @returns Win condition check result with game over status, winner, and reason
+ */
 export function checkWinConditions(
   scores: { [playerId: string]: number },
   round: number
-): { gameOver: boolean; winner?: string; reason?: string } {
+): WinConditionResult {
   const playerIds = Object.keys(scores);
   if (playerIds.length !== 2) return { gameOver: false };
 
@@ -117,19 +159,19 @@ export function checkWinConditions(
   const score1 = scores[player1];
   const score2 = scores[player2];
 
-  if (score1 <= 0) {
+  if (score1 <= GAME_CONSTANTS.MIN_SCORE) {
     return { gameOver: true, winner: player2, reason: 'opponent_zero' };
   }
-  if (score2 <= 0) {
+  if (score2 <= GAME_CONSTANTS.MIN_SCORE) {
     return { gameOver: true, winner: player1, reason: 'opponent_zero' };
   }
-  if (score1 >= 300) {
+  if (score1 >= GAME_CONSTANTS.WINNING_SCORE) {
     return { gameOver: true, winner: player1, reason: 'points_threshold' };
   }
-  if (score2 >= 300) {
+  if (score2 >= GAME_CONSTANTS.WINNING_SCORE) {
     return { gameOver: true, winner: player2, reason: 'points_threshold' };
   }
-  if (round >= 20) {
+  if (round >= GAME_CONSTANTS.MAX_ROUNDS) {
     const winner = score1 > score2 ? player1 : score2 > score1 ? player2 : undefined;
     return { gameOver: true, winner, reason: 'rounds_complete' };
   }

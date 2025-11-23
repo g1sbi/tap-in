@@ -1,15 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { useGameState } from '@/lib/game-state';
-import { roomManager } from '@/lib/room-manager';
-import Dice from '@/components/game/dice';
-import BettingTimer from '@/components/game/betting-timer';
 import BettingPanel from '@/components/game/betting-panel';
+import BettingTimer from '@/components/game/betting-timer';
+import Dice from '@/components/game/dice';
 import PlayerInfo from '@/components/game/player-info';
 import ResultsOverlay from '@/components/game/results-overlay';
-import type { Prediction, RoundResults } from '@/lib/game-logic';
+import { GAME_CONSTANTS } from '@/lib/game-constants';
+import type { Prediction } from '@/lib/game-logic';
+import { useGameState } from '@/lib/game-state';
+import { roomManager } from '@/lib/room-manager';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function GameScreen() {
   const router = useRouter();
@@ -27,15 +28,12 @@ export default function GameScreen() {
     gameWinner,
     gameOverReason,
     playerId,
+    lastRoundResults,
     actions,
   } = useGameState();
 
-  const {
-    lastRoundResults,
-  } = useGameState();
-  
   const [showResults, setShowResults] = useState(false);
-  const isRushRound = round % 5 === 0 && round > 0;
+  const isRushRound = round % GAME_CONSTANTS.RUSH_ROUND_INTERVAL === 0 && round > 0;
 
   const handleQuit = async () => {
     await roomManager.leaveRoom();
@@ -89,13 +87,12 @@ export default function GameScreen() {
 
   const getMyResult = () => {
     if (!lastRoundResults) return null;
-    const playerId = useGameState.getState().playerId;
     return lastRoundResults.playerResults[playerId] || null;
   };
 
   const getOpponentResult = () => {
     if (!lastRoundResults) return null;
-    const opponentId = useGameState.getState().opponentId;
+    const { opponentId } = useGameState.getState();
     if (!opponentId) return null;
     return lastRoundResults.playerResults[opponentId] || null;
   };

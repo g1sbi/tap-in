@@ -1,5 +1,7 @@
 import { useGameState } from '@/lib/game-state';
 import { roomManager } from '@/lib/room-manager';
+import { GAME_CONSTANTS } from '@/lib/game-constants';
+import { logger } from '@/lib/logger';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -9,50 +11,42 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function HomeScreen() {
   const router = useRouter();
   const [roomCode, setRoomCode] = useState('');
-  const { actions } = useGameState();
+  const { actions, playerId } = useGameState();
 
   const handleHostGame = async () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const code = await roomManager.createRoom();
-      actions.setRoom(code, 'host', useGameState.getState().playerId);
+      actions.setRoom(code, 'host', playerId);
       router.push('/lobby');
     } catch (error) {
+      logger.error('HomeScreen', 'Failed to create room', error);
       Alert.alert('Error', 'Failed to create room. Please try again.');
-      console.error(error);
     }
   };
 
   const handleJoinGame = async () => {
-    console.log(`[UI] handleJoinGame called | Room code: ${roomCode} | Length: ${roomCode.length}`);
-    
     if (roomCode.length === 0) {
       return;
     }
     
-    if (roomCode.length !== 6) {
-      console.log(`[UI] Invalid room code length: ${roomCode.length}`);
+    if (roomCode.length !== GAME_CONSTANTS.ROOM_CODE_LENGTH) {
       Alert.alert('Invalid Code', 'Please enter a 6-digit room code');
       return;
     }
 
     try {
-      console.log(`[UI] Attempting to join room: ${roomCode}`);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const success = await roomManager.joinRoom(roomCode);
-      console.log(`[UI] joinRoom returned: ${success}`);
       
       if (success) {
-        console.log(`[UI] Join successful, setting room state and navigating to lobby`);
-        actions.setRoom(roomCode, 'guest', useGameState.getState().playerId);
-        console.log(`[UI] Navigating to /lobby`);
+        actions.setRoom(roomCode, 'guest', playerId);
         router.push('/lobby');
       } else {
-        console.error(`[UI] Join failed, showing error alert`);
         Alert.alert('Error', 'Failed to join room. Please check the code and try again.');
       }
     } catch (error) {
-      console.error(`[UI] Exception during join:`, error);
+      logger.error('HomeScreen', 'Exception during join', error);
       Alert.alert('Error', 'Failed to join room. Please try again.');
     }
   };
@@ -87,7 +81,7 @@ export default function HomeScreen() {
                 onChangeText={setRoomCode}
                 placeholder="Enter 6-digit code"
                 placeholderTextColor="#666"
-                maxLength={6}
+                maxLength={GAME_CONSTANTS.ROOM_CODE_LENGTH}
                 keyboardType="number-pad"
                 returnKeyType="done"
                 onSubmitEditing={handleJoinGame}

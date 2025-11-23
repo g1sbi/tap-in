@@ -10,6 +10,7 @@ import Animated, {
   runOnJS,
   Easing,
 } from 'react-native-reanimated';
+import { GAME_CONSTANTS } from '@/lib/game-constants';
 
 interface PlayerInfoProps {
   points: number;
@@ -23,7 +24,7 @@ export default function PlayerInfo({
   points,
   winStreak,
   round,
-  totalRounds = 20,
+  totalRounds = GAME_CONSTANTS.MAX_ROUNDS,
   isOpponent = false,
 }: PlayerInfoProps) {
   const animatedPoints = useSharedValue(points);
