@@ -74,6 +74,8 @@ const styles = StyleSheet.create({
   timer: {
     fontWeight: 'bold',
     textAlign: 'center',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
 });
 

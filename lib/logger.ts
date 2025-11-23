@@ -6,18 +6,31 @@
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 class Logger {
-  private isDevelopment = __DEV__ || process.env.NODE_ENV === 'development';
+  private isDevelopment: boolean;
+  
+  constructor() {
+    // Check multiple ways to determine if we're in development
+    // @ts-ignore - __DEV__ is a global in React Native
+    const isDevGlobal = typeof __DEV__ !== 'undefined' && __DEV__;
+    const isDevEnv = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === undefined;
+    this.isDevelopment = isDevGlobal || isDevEnv;
+  }
   
   private log(level: LogLevel, context: string, message: string, data?: any): void {
-    if (!this.isDevelopment && level === 'debug') return;
+    // Always show error and warn logs
+    // Only filter debug logs in production
+    if (level === 'debug' && !this.isDevelopment) return;
     
     const timestamp = new Date().toISOString();
     const prefix = `[${timestamp}] [${level.toUpperCase()}] [${context}]`;
     
+    // Use console.log for debug, console[level] for others
+    const consoleMethod = level === 'debug' ? 'log' : level;
+    
     if (data !== undefined) {
-      console[level === 'debug' ? 'log' : level](`${prefix} ${message}`, data);
+      console[consoleMethod](`${prefix} ${message}`, data);
     } else {
-      console[level === 'debug' ? 'log' : level](`${prefix} ${message}`);
+      console[consoleMethod](`${prefix} ${message}`);
     }
   }
   

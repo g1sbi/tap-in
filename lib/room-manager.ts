@@ -34,12 +34,18 @@ interface PlayerJoinedData {
   opponentId: string;
 }
 
+interface TimerSyncData {
+  startTimestamp: number;
+  duration: number;
+}
+
 export type RoomMessage = 
   | { type: 'bet-locked'; data: BetLockedData }
   | { type: 'dice-result'; data: DiceResultData }
   | { type: 'game-over'; data: GameOverData }
   | { type: 'start-game'; data: StartGameData }
   | { type: 'new-round'; data: NewRoundData }
+  | { type: 'timer-sync'; data: TimerSyncData }
   | { type: 'player-joined'; data: PlayerJoinedData }
   | { type: 'player-left' | 'opponent-ready' | 'both-ready'; data?: undefined };
 
@@ -53,6 +59,8 @@ class RoomManager {
   private scores: { [playerId: string]: number } = {};
   private bets: { [playerId: string]: Bet } = {};
   private timerInterval: ReturnType<typeof setInterval> | null = null;
+  private roundStartTimestamp: number | null = null;
+  private hasGameStarted: boolean = false;
   /**
    * Custom message handlers for extensibility.
    * Allows external code to register custom handlers for specific message types.
@@ -90,7 +98,30 @@ class RoomManager {
   }
 
   /**
+   * Gets the host's presence data from the channel.
+   * 
+   * @returns Host presence data or null if not found
+   */
+  private getHostPresence(): any {
+    const presenceState = this.channel?.presenceState();
+    if (!presenceState) return null;
+    
+    const players = Object.keys(presenceState);
+    for (const playerId of players) {
+      const presences = presenceState[playerId];
+      if (Array.isArray(presences) && presences.length > 0) {
+        const presence = presences[0] as any;
+        if (presence.role === 'host') {
+          return presence;
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
    * Handles presence sync events when players join/leave.
+   * Also checks for timer updates from host (guest only).
    * 
    * @param role - The player role
    */
@@ -107,15 +138,60 @@ class RoomManager {
         this.scores[opponentId] = GAME_CONSTANTS.INITIAL_SCORE;
         logger.debug('RoomManager', `Two players detected | OpponentId: ${opponentId}`);
         
-        if (role === 'host') {
+        // Host: Only start game once when opponent first joins
+        if (role === 'host' && !this.hasGameStarted) {
+          this.hasGameStarted = true;
           this.broadcast({ type: 'player-joined', data: { opponentId } });
           this.startGame();
         }
+      }
+      
+      // Guest: Check for timer updates from host presence
+      if (role === 'guest') {
+        this.checkHostTimerUpdate();
       }
     } else if (players.length === 1) {
       logger.debug('RoomManager', 'Waiting for opponent');
     } else {
       logger.warn('RoomManager', `Unexpected player count: ${players.length}`);
+    }
+  }
+
+  /**
+   * Checks host presence for timer updates and syncs guest timer.
+   * Called by guest when presence syncs.
+   */
+  private checkHostTimerUpdate(): void {
+    if (this.isHost) return;
+    
+    const hostPresence = this.getHostPresence();
+    if (!hostPresence) return;
+    
+    const { roundStartTime, timerDuration } = hostPresence;
+    
+    // Check if host has updated timer info and we're in BETTING phase
+    const { gamePhase } = useGameState.getState();
+    if (gamePhase !== 'BETTING') return;
+    
+    // If we have timer info
+    if (roundStartTime && timerDuration) {
+      // Only sync if:
+      // 1. We don't have a timer running yet, OR
+      // 2. The timestamp is NEWER than our current one (to avoid syncing with stale data)
+      const shouldSync = !this.roundStartTimestamp || roundStartTime > this.roundStartTimestamp;
+      
+      if (shouldSync) {
+        logger.debug('RoomManager', `Syncing timer from host presence | StartTime: ${roundStartTime} | Duration: ${timerDuration}s | Current: ${this.roundStartTimestamp || 'none'}`);
+        
+        this.roundStartTimestamp = roundStartTime;
+        this.clearTimer();
+        this.startTimerWithTimestamp(timerDuration, roundStartTime);
+        
+        const elapsed = Math.floor((Date.now() - roundStartTime) / 1000);
+        logger.debug('RoomManager', `Timer synced from presence | Elapsed: ${elapsed}s`);
+      } else {
+        logger.debug('RoomManager', `Ignoring stale presence timer | Host: ${roundStartTime} | Current: ${this.roundStartTimestamp}`);
+      }
     }
   }
 
@@ -169,6 +245,29 @@ class RoomManager {
   }
 
   /**
+   * Updates presence with timer information (host only).
+   * 
+   * @param roundStartTime - The timestamp when the round started
+   * @param timerDuration - The timer duration in seconds
+   */
+  private async updatePresenceTimer(roundStartTime: number, timerDuration: number): Promise<void> {
+    if (!this.isHost || !this.channel) return;
+    
+    try {
+      await this.channel.track({
+        playerId: this.playerId,
+        role: 'host',
+        online_at: new Date().toISOString(),
+        roundStartTime,
+        timerDuration,
+      });
+      logger.debug('RoomManager', `Presence updated with timer | StartTime: ${roundStartTime} | Duration: ${timerDuration}s`);
+    } catch (error) {
+      logger.error('RoomManager', 'Error updating presence with timer', error);
+    }
+  }
+
+  /**
    * Creates a new game room and sets up the host player.
    * 
    * @returns The generated room code
@@ -181,6 +280,7 @@ class RoomManager {
       
       this.roomCode = code;
       this.isHost = true;
+      this.hasGameStarted = false;
       this.currentDice = Math.floor(Math.random() * (GAME_CONSTANTS.DICE_MAX - GAME_CONSTANTS.DICE_MIN + 1)) + GAME_CONSTANTS.DICE_MIN;
       this.round = 0;
       this.scores = {};
@@ -222,6 +322,7 @@ class RoomManager {
       
       this.roomCode = code;
       this.isHost = false;
+      this.hasGameStarted = false;
 
       const { playerId } = useGameState.getState();
       this.playerId = playerId;
@@ -264,9 +365,60 @@ class RoomManager {
   }
 
   /**
+   * Prepares round state without starting the timer.
+   * Used by guest to set up state before receiving timer-sync.
+   */
+  private prepareRoundState(): void {
+    const { gamePhase, actions } = useGameState.getState();
+    
+    if (gamePhase === 'GAME_OVER') {
+      logger.debug('RoomManager', 'Game is over, skipping round preparation');
+      return;
+    }
+
+    this.clearTimer();
+
+    this.round++;
+    this.bets = {};
+    
+    // Clear timestamp so we can sync with fresh host data
+    if (!this.isHost) {
+      this.roundStartTimestamp = null;
+    }
+    
+    actions.setCurrentDice(this.currentDice);
+    actions.incrementRound();
+    actions.setGamePhase('BETTING');
+    actions.unlockBet();
+    actions.setMyBet(null);
+    actions.setOpponentBet(null);
+    
+    // Reset timer to prevent stale value from triggering onExpire
+    const timerDuration = this.round % GAME_CONSTANTS.RUSH_ROUND_INTERVAL === 0 
+      ? GAME_CONSTANTS.RUSH_TIMER_DURATION 
+      : GAME_CONSTANTS.NORMAL_TIMER_DURATION;
+    actions.setTimeRemaining(timerDuration);
+    
+    logger.debug('RoomManager', `Round ${this.round} state prepared (waiting for timer-sync)`);
+    
+    // Guest: Check for host timer update after a brief delay to allow presence to sync
+    if (!this.isHost) {
+      setTimeout(() => {
+        this.checkHostTimerUpdate();
+      }, 100);
+    }
+  }
+
+  /**
    * Starts a new betting round with timer.
+   * Only called by host. Updates presence state for guest to sync.
    */
   private startRound(): void {
+    if (!this.isHost) {
+      logger.warn('RoomManager', 'startRound() called by guest - this should not happen');
+      return;
+    }
+
     const { gamePhase, actions } = useGameState.getState();
     
     if (gamePhase === 'GAME_OVER') {
@@ -279,22 +431,38 @@ class RoomManager {
     this.round++;
     this.bets = {};
     
-    actions.setCurrentDice(this.currentDice);
-    actions.setGamePhase('BETTING');
-    actions.unlockBet();
-    actions.setMyBet(null);
-    actions.setOpponentBet(null);
-    actions.incrementRound();
-
+    // Set round start timestamp
+    this.roundStartTimestamp = Date.now();
+    
     const isRushRound = this.round % GAME_CONSTANTS.RUSH_ROUND_INTERVAL === 0;
     const timerDuration = isRushRound 
       ? GAME_CONSTANTS.RUSH_TIMER_DURATION 
       : GAME_CONSTANTS.NORMAL_TIMER_DURATION;
     
-    logger.debug('RoomManager', `Round ${this.round} started | Timer: ${timerDuration}s | Rush: ${isRushRound}`);
+    actions.setCurrentDice(this.currentDice);
+    actions.incrementRound();
+    actions.setGamePhase('BETTING');
+    actions.unlockBet();
+    actions.setMyBet(null);
+    actions.setOpponentBet(null);
     
-    actions.setTimeRemaining(timerDuration);
-    this.startTimer(timerDuration);
+    logger.debug('RoomManager', `Round ${this.round} started | Timer: ${timerDuration}s | Rush: ${isRushRound} | Timestamp: ${this.roundStartTimestamp}`);
+    
+    // Update presence with timer info - this is the primary sync mechanism
+    // Guest will read from presence state via handlePresenceSync
+    this.updatePresenceTimer(this.roundStartTimestamp, timerDuration);
+    
+    // Also broadcast as fallback (for backwards compatibility)
+    this.broadcast({
+      type: 'timer-sync',
+      data: {
+        startTimestamp: this.roundStartTimestamp,
+        duration: timerDuration
+      }
+    });
+    
+    // Start timer with timestamp - this will calculate and set the correct timeRemaining
+    this.startTimerWithTimestamp(timerDuration, this.roundStartTimestamp);
   }
 
   /**
@@ -327,6 +495,48 @@ class RoomManager {
         this.forceResolve();
       }
     }, 1000);
+  }
+
+  /**
+   * Starts the betting timer countdown using a timestamp for synchronization.
+   * For guests, ignores network latency to maintain perceived synchronization.
+   * 
+   * @param duration - Timer duration in seconds
+   * @param startTimestamp - The timestamp when the round started (for host reference only)
+   */
+  private startTimerWithTimestamp(duration: number, startTimestamp: number): void {
+    const { actions } = useGameState.getState();
+    
+    // Guest: Ignore network latency for perceived synchronization
+    // Host: Calculate elapsed time for accuracy
+    let initialElapsed = 0;
+    if (this.isHost) {
+      initialElapsed = Math.max(0, Math.floor((Date.now() - startTimestamp) / 1000));
+      initialElapsed = Math.min(initialElapsed, duration);
+    }
+    
+    // Store local start time - all future calculations use THIS as reference
+    const localStartTime = Date.now();
+    
+    // Calculate time remaining using local elapsed time (immune to clock skew)
+    const calculateTimeRemaining = () => {
+      const localElapsed = Math.floor((Date.now() - localStartTime) / 1000);
+      return Math.max(0, duration - initialElapsed - localElapsed);
+    };
+    
+    // Set initial time remaining
+    actions.setTimeRemaining(calculateTimeRemaining());
+    
+    this.timerInterval = setInterval(() => {
+      const timeLeft = calculateTimeRemaining();
+      
+      actions.setTimeRemaining(timeLeft);
+
+      if (timeLeft <= 0) {
+        this.clearTimer();
+        this.forceResolve();
+      }
+    }, 100) as any as ReturnType<typeof setInterval>;
   }
 
   /**
@@ -571,6 +781,9 @@ class RoomManager {
       case 'new-round':
         this.handleNewRound(message.data);
         break;
+      case 'timer-sync':
+        this.handleTimerSync(message.data);
+        break;
       case 'opponent-ready':
       case 'player-left':
       case 'both-ready':
@@ -602,6 +815,7 @@ class RoomManager {
 
   /**
    * Handles start-game message (guest only).
+   * Sets up game state and prepares for first round, but waits for timer-sync.
    * 
    * @param data - The start-game message data
    */
@@ -614,7 +828,8 @@ class RoomManager {
     const { actions } = useGameState.getState();
     actions.startGame(data.dice);
     
-    this.startRound();
+    // Prepare round state but don't start timer - wait for timer-sync from host
+    this.prepareRoundState();
   }
 
   /**
@@ -686,6 +901,7 @@ class RoomManager {
 
   /**
    * Handles new-round message (guest only).
+   * Prepares round state but waits for timer-sync from host.
    * 
    * @param data - The new-round message data
    */
@@ -708,7 +924,34 @@ class RoomManager {
       actions.setCurrentDice(data.dice);
     }
     
-    this.startRound();
+    // Prepare round state but don't start timer - wait for timer-sync from host
+    this.prepareRoundState();
+  }
+
+  /**
+   * Handles timer-sync message for synchronizing timers across devices.
+   * Guest uses this to start the timer synchronized with the host.
+   * 
+   * @param data - The timer-sync message data
+   */
+  private handleTimerSync(data: TimerSyncData): void {
+    if (this.isHost) {
+      logger.warn('RoomManager', 'Timer-sync received by host - ignoring');
+      return;
+    }
+    
+    // Ensure round state is prepared (should already be done, but check just in case)
+    const { gamePhase } = useGameState.getState();
+    if (gamePhase !== 'BETTING') {
+      logger.warn('RoomManager', 'Timer-sync received but game phase is not BETTING - preparing round state');
+      this.prepareRoundState();
+    }
+    
+    this.roundStartTimestamp = data.startTimestamp;
+    this.clearTimer();
+    this.startTimerWithTimestamp(data.duration, data.startTimestamp);
+    
+    logger.debug('RoomManager', `Timer synced with timestamp ${data.startTimestamp} | Duration: ${data.duration}s | Elapsed: ${Math.floor((Date.now() - data.startTimestamp) / 1000)}s`);
   }
 
   /**
@@ -761,6 +1004,7 @@ class RoomManager {
     this.roomCode = null;
     this.playerId = null;
     this.isHost = false;
+    this.hasGameStarted = false;
     this.bets = {};
     this.scores = {};
     this.isLeaving = false;

@@ -297,9 +297,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   timerContainer: {
-    height: 50,
+    height: 70,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'visible',
   },
   rollingText: {
     fontSize: 20,
