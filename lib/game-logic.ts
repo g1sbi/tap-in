@@ -1,4 +1,5 @@
-import { BONUS_POINTS, GAME_CONSTANTS, type GameOverReason } from './game-constants';
+import { type GameOverReason } from './game-constants';
+import { gameConfig } from './game-config';
 
 export type Prediction = 'higher' | 'lower' | '4-or-higher' | '3-or-lower';
 export type RoundResult = 'win' | 'loss' | 'push' | 'passed';
@@ -81,22 +82,22 @@ export function calculateBonuses(
 
   // Mirror bonus: both players bet same direction and both win
   if (bet1.prediction === bet2.prediction && result1 === 'win' && result2 === 'win') {
-    bonuses[player1] = (bonuses[player1] || 0) + BONUS_POINTS.MIRROR;
-    bonuses[player2] = (bonuses[player2] || 0) + BONUS_POINTS.MIRROR;
+    bonuses[player1] = (bonuses[player1] || 0) + gameConfig.MIRROR_BONUS;
+    bonuses[player2] = (bonuses[player2] || 0) + gameConfig.MIRROR_BONUS;
   }
 
   // Contrarian bonus: only this player wins (opponent loses)
   if (result1 === 'win' && result2 === 'loss') {
-    bonuses[player1] = (bonuses[player1] || 0) + BONUS_POINTS.CONTRARIAN;
+    bonuses[player1] = (bonuses[player1] || 0) + gameConfig.CONTRARIAN_BONUS;
   }
   if (result2 === 'win' && result1 === 'loss') {
-    bonuses[player2] = (bonuses[player2] || 0) + BONUS_POINTS.CONTRARIAN;
+    bonuses[player2] = (bonuses[player2] || 0) + gameConfig.CONTRARIAN_BONUS;
   }
 
   // Speed bonus: first player to bet
   const sortedBets = Object.values(bets).sort((a, b) => a.timestamp - b.timestamp);
   if (sortedBets.length > 0) {
-    bonuses[sortedBets[0].playerId] = (bonuses[sortedBets[0].playerId] || 0) + BONUS_POINTS.SPEED;
+    bonuses[sortedBets[0].playerId] = (bonuses[sortedBets[0].playerId] || 0) + gameConfig.SPEED_BONUS;
   }
 
   return bonuses;
@@ -130,7 +131,7 @@ export function calculateRoundResults(
     if (bet.amount === 0) {
       playerResults[playerId] = {
         result: 'passed',
-        pointsChange: -GAME_CONSTANTS.TIMEOUT_PENALTY,
+        pointsChange: -gameConfig.TIMEOUT_PENALTY,
         bonuses: 0, // No bonuses for passed players
       };
       return;
@@ -176,19 +177,19 @@ export function checkWinConditions(
   const score1 = scores[player1];
   const score2 = scores[player2];
 
-  if (score1 <= GAME_CONSTANTS.MIN_SCORE) {
+  if (score1 <= gameConfig.MIN_SCORE) {
     return { gameOver: true, winner: player2, reason: 'opponent_zero' };
   }
-  if (score2 <= GAME_CONSTANTS.MIN_SCORE) {
+  if (score2 <= gameConfig.MIN_SCORE) {
     return { gameOver: true, winner: player1, reason: 'opponent_zero' };
   }
-  if (score1 >= GAME_CONSTANTS.WINNING_SCORE) {
+  if (score1 >= gameConfig.WINNING_SCORE) {
     return { gameOver: true, winner: player1, reason: 'points_threshold' };
   }
-  if (score2 >= GAME_CONSTANTS.WINNING_SCORE) {
+  if (score2 >= gameConfig.WINNING_SCORE) {
     return { gameOver: true, winner: player2, reason: 'points_threshold' };
   }
-  if (round >= GAME_CONSTANTS.MAX_ROUNDS) {
+  if (round >= gameConfig.MAX_ROUNDS) {
     const winner = score1 > score2 ? player1 : score2 > score1 ? player2 : undefined;
     return { gameOver: true, winner, reason: 'rounds_complete' };
   }

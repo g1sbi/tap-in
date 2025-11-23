@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { GAME_CONSTANTS } from './game-constants';
+import { gameConfig } from './game-config';
 import type { Bet, RoundResults } from './game-logic';
 import { logger } from './logger';
 
@@ -69,18 +69,18 @@ export const useGameState = create<GameState>((set) => ({
   playerId: generatePlayerId(),
   opponentId: null,
   
-  currentDice: GAME_CONSTANTS.DICE_MIN,
+  currentDice: gameConfig.DICE_MIN,
   previousDice: null,
   round: 0,
   
-  myScore: GAME_CONSTANTS.INITIAL_SCORE,
-  opponentScore: GAME_CONSTANTS.INITIAL_SCORE,
+  myScore: gameConfig.INITIAL_SCORE,
+  opponentScore: gameConfig.INITIAL_SCORE,
   
   myBet: null,
   opponentBet: null,
   betLocked: false,
   
-  timeRemaining: GAME_CONSTANTS.NORMAL_TIMER_DURATION,
+  timeRemaining: gameConfig.NORMAL_TIMER_DURATION,
   gamePhase: 'LOBBY',
   isRushRound: false,
   
@@ -97,9 +97,9 @@ export const useGameState = create<GameState>((set) => ({
       set({ 
         gamePhase: 'BETTING', 
         currentDice: initialDice,
-        myScore: GAME_CONSTANTS.INITIAL_SCORE,
-        opponentScore: GAME_CONSTANTS.INITIAL_SCORE,
-        timeRemaining: GAME_CONSTANTS.NORMAL_TIMER_DURATION,
+        myScore: gameConfig.INITIAL_SCORE,
+        opponentScore: gameConfig.INITIAL_SCORE,
+        timeRemaining: gameConfig.NORMAL_TIMER_DURATION,
       });
     },
     setCurrentDice: (dice) => {
@@ -135,15 +135,15 @@ export const useGameState = create<GameState>((set) => ({
       roomCode: null,
       playerRole: null,
       opponentId: null,
-      currentDice: GAME_CONSTANTS.DICE_MIN,
+      currentDice: gameConfig.DICE_MIN,
       previousDice: null,
       round: 0,
-      myScore: GAME_CONSTANTS.INITIAL_SCORE,
-      opponentScore: GAME_CONSTANTS.INITIAL_SCORE,
+      myScore: gameConfig.INITIAL_SCORE,
+      opponentScore: gameConfig.INITIAL_SCORE,
       myBet: null,
       opponentBet: null,
       betLocked: false,
-      timeRemaining: GAME_CONSTANTS.NORMAL_TIMER_DURATION,
+      timeRemaining: gameConfig.NORMAL_TIMER_DURATION,
       gamePhase: 'LOBBY',
       isRushRound: false,
       winStreak: 0,

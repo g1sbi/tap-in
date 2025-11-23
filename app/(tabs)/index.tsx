@@ -1,7 +1,8 @@
+import { APP_INFO, getVersionString } from '@/constants/app-info';
+import { gameConfig } from '@/lib/game-config';
 import { useGameState } from '@/lib/game-state';
-import { roomManager } from '@/lib/room-manager';
-import { GAME_CONSTANTS } from '@/lib/game-constants';
 import { logger } from '@/lib/logger';
+import { roomManager } from '@/lib/room-manager';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -30,7 +31,7 @@ export default function HomeScreen() {
       return;
     }
     
-    if (roomCode.length !== GAME_CONSTANTS.ROOM_CODE_LENGTH) {
+    if (roomCode.length !== gameConfig.ROOM_CODE_LENGTH) {
       Alert.alert('Invalid Code', 'Please enter a 6-digit room code');
       return;
     }
@@ -59,8 +60,9 @@ export default function HomeScreen() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
         <View style={styles.content}>
           <View style={styles.header}>
-            <Text style={styles.title}>Higher Lower Dice</Text>
-            <Text style={styles.subtitle}>Simultaneous Multiplayer Betting</Text>
+            <Text style={styles.title}>{APP_INFO.TITLE}</Text>
+            <Text style={styles.subtitle}>{APP_INFO.SUBTITLE}</Text>
+            <Text style={styles.version}>{getVersionString()}</Text>
           </View>
 
           <View style={styles.diceContainer}>
@@ -81,7 +83,7 @@ export default function HomeScreen() {
                 onChangeText={setRoomCode}
                 placeholder="Enter 6-digit code"
                 placeholderTextColor="#666"
-                maxLength={GAME_CONSTANTS.ROOM_CODE_LENGTH}
+                maxLength={gameConfig.ROOM_CODE_LENGTH}
                 keyboardType="number-pad"
                 returnKeyType="done"
                 onSubmitEditing={handleJoinGame}
@@ -129,6 +131,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#888',
     textAlign: 'center',
+  },
+  version: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 4,
   },
   diceContainer: {
     alignItems: 'center',

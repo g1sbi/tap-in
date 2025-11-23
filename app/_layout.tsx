@@ -5,6 +5,9 @@ import { Platform } from 'react-native';
 import 'react-native-reanimated';
 import '../polyfills';
 
+// Import configuration overrides (must be imported early to apply before game starts)
+import '@/lib/config-overrides';
+
 // Only import react-native-get-random-values on native platforms
 if (Platform.OS !== 'web') {
   require('react-native-get-random-values');

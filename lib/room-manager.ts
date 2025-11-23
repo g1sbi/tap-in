@@ -1,5 +1,6 @@
 import { RealtimeChannel } from '@supabase/supabase-js';
-import { GAME_CONSTANTS, type GameOverReason } from './game-constants';
+import { type GameOverReason } from './game-constants';
+import { gameConfig } from './game-config';
 import type { Bet, Prediction, RoundResults } from './game-logic';
 import { calculateRoundResults, checkWinConditions } from './game-logic';
 import { useGameState } from './game-state';
@@ -57,7 +58,7 @@ class RoomManager {
   private roomCode: string | null = null;
   private playerId: string | null = null;
   private isHost: boolean = false;
-  private currentDice: number = GAME_CONSTANTS.DICE_MIN;
+  private currentDice: number = gameConfig.DICE_MIN;
   private round: number = 0;
   private scores: { [playerId: string]: number } = {};
   private bets: { [playerId: string]: Bet } = {};
@@ -74,8 +75,8 @@ class RoomManager {
    * @returns A 6-digit room code string
    */
   generateRoomCode(): string {
-    const min = GAME_CONSTANTS.ROOM_CODE_MIN;
-    const max = GAME_CONSTANTS.ROOM_CODE_MAX;
+    const min = gameConfig.ROOM_CODE_MIN;
+    const max = gameConfig.ROOM_CODE_MAX;
     return Math.floor(min + Math.random() * (max - min + 1)).toString();
   }
 
@@ -135,7 +136,7 @@ class RoomManager {
       if (opponentId) {
         const { actions } = useGameState.getState();
         actions.setOpponent(opponentId);
-        this.scores[opponentId] = GAME_CONSTANTS.INITIAL_SCORE;
+        this.scores[opponentId] = gameConfig.INITIAL_SCORE;
         logger.debug('RoomManager', `Two players detected | OpponentId: ${opponentId}`);
         
         // Host: Only start game once when opponent first joins
@@ -281,7 +282,7 @@ class RoomManager {
       this.roomCode = code;
       this.isHost = true;
       this.hasGameStarted = false;
-      this.currentDice = Math.floor(Math.random() * (GAME_CONSTANTS.DICE_MAX - GAME_CONSTANTS.DICE_MIN + 1)) + GAME_CONSTANTS.DICE_MIN;
+      this.currentDice = Math.floor(Math.random() * (gameConfig.DICE_MAX - gameConfig.DICE_MIN + 1)) + gameConfig.DICE_MIN;
       this.round = 0;
       this.scores = {};
       this.bets = {};
@@ -289,7 +290,7 @@ class RoomManager {
 
       const { playerId, actions } = useGameState.getState();
       this.playerId = playerId;
-      this.scores[this.playerId] = GAME_CONSTANTS.INITIAL_SCORE;
+      this.scores[this.playerId] = gameConfig.INITIAL_SCORE;
       
       logger.debug('RoomManager', `Room created | Initial dice: ${this.currentDice} | PlayerId: ${this.playerId}`);
 
@@ -328,7 +329,7 @@ class RoomManager {
 
       const { playerId } = useGameState.getState();
       this.playerId = playerId;
-      this.scores[this.playerId] = GAME_CONSTANTS.INITIAL_SCORE;
+      this.scores[this.playerId] = gameConfig.INITIAL_SCORE;
       
       logger.debug('RoomManager', `Room code set: ${this.roomCode} | PlayerId: ${this.playerId}`);
 
@@ -369,7 +370,7 @@ class RoomManager {
       this.startRound().catch((error) => {
         logger.error('RoomManager', 'Error in startRound', error);
       });
-    }, GAME_CONSTANTS.START_GAME_DELAY);
+    }, gameConfig.START_GAME_DELAY);
   }
 
   /**
@@ -440,7 +441,7 @@ class RoomManager {
     
     // Reset timer to prevent stale value from triggering onExpire
     // Default to normal duration - will be updated when rush status is received
-    actions.setTimeRemaining(GAME_CONSTANTS.NORMAL_TIMER_DURATION);
+    actions.setTimeRemaining(gameConfig.NORMAL_TIMER_DURATION);
     
     logger.debug('RoomManager', `Round ${this.round} state prepared (waiting for timer-sync)`);
     
@@ -479,10 +480,10 @@ class RoomManager {
     // Set round start timestamp
     this.roundStartTimestamp = Date.now();
     
-    const isRushRound = Math.random() < GAME_CONSTANTS.RUSH_ROUND_CHANCE;
+    const isRushRound = Math.random() < gameConfig.RUSH_ROUND_CHANCE;
     const timerDuration = isRushRound 
-      ? GAME_CONSTANTS.RUSH_TIMER_DURATION 
-      : GAME_CONSTANTS.NORMAL_TIMER_DURATION;
+      ? gameConfig.RUSH_TIMER_DURATION 
+      : gameConfig.NORMAL_TIMER_DURATION;
     
     actions.setCurrentDice(this.currentDice);
     // Sync round number to UI state (this.round was incremented above)
@@ -725,7 +726,7 @@ class RoomManager {
    * @returns A random dice value
    */
   private generateNewDiceValue(): number {
-    return Math.floor(Math.random() * (GAME_CONSTANTS.DICE_MAX - GAME_CONSTANTS.DICE_MIN + 1)) + GAME_CONSTANTS.DICE_MIN;
+    return Math.floor(Math.random() * (gameConfig.DICE_MAX - gameConfig.DICE_MIN + 1)) + gameConfig.DICE_MIN;
   }
 
   /**
@@ -740,14 +741,14 @@ class RoomManager {
     
     Object.entries(results.playerResults).forEach(([pid, result]) => {
       if (!this.scores[pid]) {
-        this.scores[pid] = GAME_CONSTANTS.INITIAL_SCORE;
+        this.scores[pid] = gameConfig.INITIAL_SCORE;
       }
       
       const oldScore = this.scores[pid];
       const scoreChange = result.pointsChange + result.bonuses;
       this.scores[pid] += scoreChange;
-      if (this.scores[pid] < GAME_CONSTANTS.MIN_SCORE) {
-        this.scores[pid] = GAME_CONSTANTS.MIN_SCORE;
+      if (this.scores[pid] < gameConfig.MIN_SCORE) {
+        this.scores[pid] = gameConfig.MIN_SCORE;
       }
       
       logger.debug('RoomManager', `Player ${pid}: ${oldScore} -> ${this.scores[pid]} (change: ${scoreChange >= 0 ? '+' : ''}${scoreChange} = ${result.pointsChange >= 0 ? '+' : ''}${result.pointsChange} points + ${result.bonuses} bonus) | Result: ${result.result}`);
@@ -775,8 +776,8 @@ class RoomManager {
   private handleGameEnd(newDice: number, results: RoundResults, winCheck: { gameOver: boolean; winner?: string; reason?: string }): void {
     const { playerId, opponentId, actions } = useGameState.getState();
     const winnerId = winCheck.winner || null;
-    const myScore = this.scores[playerId] ?? GAME_CONSTANTS.INITIAL_SCORE;
-    const oppScore = this.scores[opponentId || ''] ?? GAME_CONSTANTS.INITIAL_SCORE;
+    const myScore = this.scores[playerId] ?? gameConfig.INITIAL_SCORE;
+    const oppScore = this.scores[opponentId || ''] ?? gameConfig.INITIAL_SCORE;
     
     logger.debug('RoomManager', `Game over | Winner: ${winnerId} | Reason: ${winCheck.reason}`, this.scores);
     
@@ -811,7 +812,7 @@ class RoomManager {
         },
       });
       actions.setGamePhase('GAME_OVER');
-    }, GAME_CONSTANTS.RESULTS_DISPLAY_DURATION);
+    }, gameConfig.RESULTS_DISPLAY_DURATION);
     
     this.clearTimer();
   }
@@ -827,8 +828,8 @@ class RoomManager {
     actions.setGamePhase('REVEALING');
     
     setTimeout(() => {
-      const myScore = this.scores[playerId] ?? GAME_CONSTANTS.INITIAL_SCORE;
-      const oppScore = this.scores[opponentId || ''] ?? GAME_CONSTANTS.INITIAL_SCORE;
+      const myScore = this.scores[playerId] ?? gameConfig.INITIAL_SCORE;
+      const oppScore = this.scores[opponentId || ''] ?? gameConfig.INITIAL_SCORE;
       
       logger.debug('RoomManager', `Round ${this.round} | Broadcasting dice-result`, { dice: newDice, scores: this.scores });
       
@@ -855,8 +856,8 @@ class RoomManager {
         this.startRound().catch((error) => {
           logger.error('RoomManager', 'Error in startRound', error);
         });
-      }, GAME_CONSTANTS.NEW_ROUND_DELAY);
-    }, GAME_CONSTANTS.DICE_ROLL_DELAY);
+      }, gameConfig.NEW_ROUND_DELAY);
+    }, gameConfig.DICE_ROLL_DELAY);
   }
 
   /**
@@ -952,8 +953,8 @@ class RoomManager {
     const { opponentId, actions } = useGameState.getState();
     
     const { dice, results, scores } = data;
-    const myScore = scores[this.playerId!] ?? GAME_CONSTANTS.INITIAL_SCORE;
-    const oppScore = scores[opponentId || ''] ?? GAME_CONSTANTS.INITIAL_SCORE;
+    const myScore = scores[this.playerId!] ?? gameConfig.INITIAL_SCORE;
+    const oppScore = scores[opponentId || ''] ?? gameConfig.INITIAL_SCORE;
     
     logger.debug('RoomManager', `GUEST received dice-result | Dice: ${dice} | Scores from host:`, { scores });
     logger.debug('RoomManager', `GUEST local scores before update:`, { ...this.scores });
@@ -997,8 +998,8 @@ class RoomManager {
     const { opponentId, actions } = useGameState.getState();
     const winnerId = data.winner || null;
     const finalScores = data.scores || {};
-    const finalMyScore = finalScores[this.playerId!] ?? GAME_CONSTANTS.INITIAL_SCORE;
-    const finalOppScore = finalScores[opponentId || ''] ?? GAME_CONSTANTS.INITIAL_SCORE;
+    const finalMyScore = finalScores[this.playerId!] ?? gameConfig.INITIAL_SCORE;
+    const finalOppScore = finalScores[opponentId || ''] ?? gameConfig.INITIAL_SCORE;
     
     logger.debug('RoomManager', `Game over | Winner: ${winnerId} | Reason: ${data.reason}`, finalScores);
     

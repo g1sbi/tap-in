@@ -151,20 +151,110 @@ Pure functions for game rules and calculations.
 - Opponent reaches 0 points
 - 20 rounds completed (highest score wins)
 
-### 5. Game Constants (`lib/game-constants.ts`)
+### 5. Game Configuration System
 
-Centralized configuration values for game mechanics.
+The game uses a centralized configuration system that allows runtime modification of game parameters for testing and future settings menu.
+
+#### 5.1 Game Constants (`lib/game-constants.ts`)
+
+Contains the default values for all game mechanics. This is the single source of truth for default configuration.
 
 **Key Constants:**
 
 - `INITIAL_SCORE: 100` - Starting points for both players
 - `WINNING_SCORE: 300` - Points threshold to win instantly
+- `MIN_SCORE: 0` - Minimum score (players cannot go below this)
 - `MAX_ROUNDS: 20` - Maximum rounds per game
 - `NORMAL_TIMER_DURATION: 10` - Standard betting phase duration (seconds)
 - `RUSH_TIMER_DURATION: 5` - Rush round betting phase duration (seconds)
 - `RUSH_ROUND_CHANCE: 0.33` - Probability of rush round per round (33%)
 - `ROOM_CODE_LENGTH: 6` - Length of room code for joining games
+- `ROOM_CODE_MIN: 100000` - Minimum room code value
+- `ROOM_CODE_MAX: 999999` - Maximum room code value
 - `TIMEOUT_PENALTY: 10` - Points lost when timer expires without bet
+- `RESULTS_DISPLAY_DURATION: 4000` - Duration to display results overlay (ms)
+- `COUNTDOWN_DURATION: 3000` - Initial countdown duration (ms)
+- `DICE_ROLL_DELAY: 800` - Dice roll animation delay (ms)
+- `NEW_ROUND_DELAY: 6000` - Delay between rounds (ms)
+- `START_GAME_DELAY: 3000` - Delay before game starts (ms)
+- `GAME_OVER_DELAY: 100` - Delay before showing game over screen (ms)
+
+**Bonus Points:**
+
+- `MIRROR: 10` - Bonus when both players win with same prediction
+- `CONTRARIAN: 5` - Bonus when only you win (opponent loses)
+- `SPEED: 2` - Bonus for first player to bet
+
+**Bet Amounts:**
+
+- `SMALL: 10` - Small bet amount
+- `MEDIUM: 25` - Medium bet amount
+- `HALF_PERCENTAGE: 0.5` - Percentage for "50%" bet option
+
+#### 5.2 Game Config (`lib/game-config.ts`)
+
+Runtime configuration manager that provides access to all game configuration values. This is the single point of access used throughout the application.
+
+**Features:**
+
+- Singleton instance (`gameConfig`) exported for use across the app
+- Getter methods for all configuration values
+- Methods to modify values at runtime:
+  - `set(key, value)` - Modify game constants
+  - `setBonus(key, value)` - Modify bonus points
+  - `setBetAmount(key, value)` - Modify bet amounts
+  - `reset()` - Reset all values to defaults
+- Methods to retrieve all values:
+  - `getAll()` - Get all game constants
+  - `getBonuses()` - Get all bonus points
+  - `getBetAmounts()` - Get all bet amounts
+
+**Usage:**
+
+All game code accesses configuration through `gameConfig` instead of directly importing `GAME_CONSTANTS`:
+
+```typescript
+import { gameConfig } from '@/lib/game-config';
+
+// Access values
+const winningScore = gameConfig.WINNING_SCORE;
+const initialScore = gameConfig.INITIAL_SCORE;
+const bonuses = gameConfig.getBonuses();
+```
+
+#### 5.3 Configuration Overrides (`lib/config-overrides.ts`)
+
+Centralized file for modifying game configuration values for testing or customization. This file is imported at app startup in `app/_layout.tsx`.
+
+**Purpose:**
+
+- Single location to modify game parameters for testing
+- All override values are commented by default
+- Uncomment and modify only the values you want to change
+- Prepares the system for a future settings menu
+
+**Usage:**
+
+1. Open `lib/config-overrides.ts`
+2. Uncomment the values you want to modify
+3. Change the values as needed
+
+**Example:**
+
+```typescript
+// For faster testing
+gameConfig.set('WINNING_SCORE', 150);
+gameConfig.set('INITIAL_SCORE', 50);
+gameConfig.set('NORMAL_TIMER_DURATION', 5);
+gameConfig.set('MAX_ROUNDS', 10);
+```
+
+**Important Notes:**
+
+- Default values remain in `game-constants.ts` (single source of truth)
+- `config-overrides.ts` is only for runtime overrides
+- No duplication: values are defined once in `game-constants.ts`
+- All game code uses `gameConfig` to access values, ensuring consistency
 
 ### 4. Room Manager (`lib/room-manager.ts`)
 

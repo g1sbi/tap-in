@@ -10,7 +10,7 @@ import Animated, {
   runOnJS,
   Easing,
 } from 'react-native-reanimated';
-import { GAME_CONSTANTS } from '@/lib/game-constants';
+import { gameConfig } from '@/lib/game-config';
 
 interface PlayerInfoProps {
   points: number;
@@ -26,7 +26,7 @@ export default function PlayerInfo({
   points,
   winStreak,
   round,
-  totalRounds = GAME_CONSTANTS.MAX_ROUNDS,
+  totalRounds = gameConfig.MAX_ROUNDS,
   isOpponent = false,
   isWinning = false,
   isHost = false,
