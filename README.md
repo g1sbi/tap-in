@@ -1,4 +1,4 @@
-# Higher Lower Dice - Simultaneous Multiplayer Betting Game
+# DICE RUSH! - Simultaneous Multiplayer Betting Game
 
 A real-time multiplayer dice betting game built with React Native Expo and Supabase Realtime.
 

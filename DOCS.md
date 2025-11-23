@@ -1,4 +1,4 @@
-# Higher Lower Dice - Technical Documentation
+# DICE RUSH! - Technical Documentation
 
 ## Table of Contents
 
@@ -13,7 +13,7 @@
 
 ## Architecture Overview
 
-Higher Lower Dice is a real-time multiplayer game built with React Native Expo. It uses Supabase Realtime for peer-to-peer communication without requiring a custom backend server.
+DICE RUSH! is a real-time multiplayer game built with React Native Expo. It uses Supabase Realtime for peer-to-peer communication without requiring a custom backend server.
 
 ### Key Technologies
 
@@ -255,6 +255,43 @@ gameConfig.set('MAX_ROUNDS', 10);
 - `config-overrides.ts` is only for runtime overrides
 - No duplication: values are defined once in `game-constants.ts`
 - All game code uses `gameConfig` to access values, ensuring consistency
+
+#### 5.4 App Information (`constants/app-info.ts`)
+
+Centralized location for app metadata including version number, title, and subtitle displayed on the home screen.
+
+**Purpose:**
+
+- Single source of truth for app version number
+- Easy version updates when releasing new versions
+- Centralized app title and subtitle management
+- Formatted version string for display
+
+**Properties:**
+
+- `VERSION: string` - App version number (e.g., "0.12.0")
+- `TITLE: string` - App title displayed on home screen (e.g., "DICE RUSH!")
+- `SUBTITLE: string` - App subtitle displayed on home screen
+- `VERSION_LABEL: string` - Version label prefix (e.g., "Early Access", "Beta")
+
+**Functions:**
+
+- `getVersionString(): string` - Returns formatted version string (e.g., "Early Access • v0.12.0")
+
+**Usage:**
+
+```typescript
+import { APP_INFO, getVersionString } from '@/constants/app-info';
+
+// Access values
+const title = APP_INFO.TITLE;
+const version = APP_INFO.VERSION;
+const versionString = getVersionString(); // "Early Access • v0.12.0"
+```
+
+**Updating Version:**
+
+When releasing a new version, simply update the `VERSION` property in `constants/app-info.ts`. The version will automatically update throughout the app.
 
 ### 4. Room Manager (`lib/room-manager.ts`)
 
@@ -826,8 +863,8 @@ Update `app.json` before deployment:
 ```json
 {
   "expo": {
-    "name": "Higher Lower Dice",
-    "slug": "higher-lower-dice",
+    "name": "DICE RUSH!",
+    "slug": "dice-rush",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",

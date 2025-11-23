@@ -1,8 +1,8 @@
-# Higher Lower Dice - Game Guide
+# DICE RUSH! - Game Guide
 
 ## How to Play
 
-Higher Lower Dice is a fast-paced, simultaneous multiplayer betting game where you and your opponent predict whether the next dice roll will be higher or lower than the current one.
+DICE RUSH! is a fast-paced, simultaneous multiplayer betting game where you and your opponent predict whether the next dice roll will be higher or lower than the current one.
 
 ## Getting Started
 
@@ -433,6 +433,6 @@ Round 1:
 
 ## Enjoy the Game
 
-Higher Lower Dice is all about quick thinking, risk management, and a bit of luck. Master the probabilities, manage your points wisely, and outsmart your opponent!
+DICE RUSH! is all about quick thinking, risk management, and a bit of luck. Master the probabilities, manage your points wisely, and outsmart your opponent!
 
 Good luck and have fun! 🎲
