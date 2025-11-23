@@ -18,6 +18,8 @@ interface PlayerInfoProps {
   round: number;
   totalRounds?: number;
   isOpponent?: boolean;
+  isWinning?: boolean;
+  isHost?: boolean;
 }
 
 export default function PlayerInfo({
@@ -26,6 +28,8 @@ export default function PlayerInfo({
   round,
   totalRounds = GAME_CONSTANTS.MAX_ROUNDS,
   isOpponent = false,
+  isWinning = false,
+  isHost = false,
 }: PlayerInfoProps) {
   const animatedPoints = useSharedValue(points);
   const scale = useSharedValue(1);
@@ -54,11 +58,19 @@ export default function PlayerInfo({
 
   return (
     <View style={[styles.container, isOpponent && styles.opponentContainer]}>
+      {isHost && (
+        <View style={styles.hostBadge}>
+          <Text style={styles.hostBadgeText}>HOST</Text>
+        </View>
+      )}
       <View style={styles.pointsContainer}>
         <Text style={styles.label}>{isOpponent ? 'Opponent' : 'Your'} Points</Text>
+        <View style={styles.pointsRow}>
         <Animated.Text style={[styles.points, pointsStyle]}>
           {displayPoints}
         </Animated.Text>
+          {isWinning && <Text style={styles.crown}>👑</Text>}
+        </View>
       </View>
 
       <View style={styles.statsRow}>
@@ -85,12 +97,36 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#1A1A1A',
     gap: 8,
+    position: 'relative',
   },
   opponentContainer: {
     backgroundColor: '#2A1A2A',
   },
+  hostBadge: {
+    position: 'absolute',
+    top: -8,
+    left: -8,
+    backgroundColor: '#2A2A2A',
+    borderRadius: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: '#444',
+    zIndex: 10,
+  },
+  hostBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
   pointsContainer: {
     alignItems: 'center',
+  },
+  pointsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   label: {
     fontSize: 12,
@@ -101,6 +137,10 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     color: '#FFFFFF',
+  },
+  crown: {
+    fontSize: 20,
+    marginLeft: 4,
   },
   statsRow: {
     flexDirection: 'row',

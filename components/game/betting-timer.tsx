@@ -41,6 +41,17 @@ export default function BettingTimer({ seconds, onExpire, isRushRound = false }:
 
   const animatedStyle = useAnimatedStyle(() => {
     const currentSeconds = secondsValue.value;
+    
+    // Rush rounds: Always orange
+    if (isRushRound) {
+      return {
+        transform: [{ scale: scale.value }],
+        opacity: opacity.value,
+        color: '#FF8C00',
+      };
+    }
+    
+    // Normal rounds: Red when <= 3s, white otherwise
     const colorInterpolation = interpolate(
       currentSeconds,
       [0, 3, 10],

@@ -20,7 +20,7 @@ npx expo start
 - **Real-time Multiplayer**: Peer-to-peer gameplay using Supabase Realtime
 - **10-Second Rounds**: Fast-paced betting with countdown timer
 - **Special Bonuses**: Mirror bonus, contrarian bonus, and speed bonus
-- **Rush Rounds**: Every 5th round has a 5-second timer with double points
+- **Rush Rounds**: 33% chance each round (5-second timer) with visual indicators
 - **Win Conditions**: First to 300 points, opponent to 0, or most points after 20 rounds
 
 ## Setup
@@ -78,11 +78,16 @@ npx expo start
 - Both players start with 100 points
 - Each round shows the current dice value
 - Players have 10 seconds (5 seconds on rush rounds) to bet
+- Rush rounds occur randomly (33% chance) with orange timer, "RUSH ROUND" badge, and flash animation
+- **Timeout Penalty**: If a player doesn't bet before the timer expires, they receive a "PASSED" status and lose 10 points
 - Correct prediction: +bet amount
 - Wrong prediction: -bet amount
 - Push (same number): bet returned, no change
   - **Note**: Pushes only occur in normal rounds (dice 2-5)
   - Edge case rounds (dice 1 or 6) have no pushes - always win or loss
+- **Visual Indicators**:
+  - 👑 Crown icon appears next to the score of the player currently winning
+  - HOST badge appears on the player who created the room
 - Game ends when:
   - A player reaches 300 points
   - A player reaches 0 points
@@ -136,6 +141,12 @@ The documentation includes:
 - Detailed setup instructions
 - Deployment guides (EAS Build, Web, etc.)
 - Troubleshooting guide
+
+## Recent Improvements
+
+- **Timer Synchronization**: Presence-based timer sync using Supabase Presence for accurate multiplayer timing
+- **Clock Skew Immunity**: Local time tracking prevents timer desynchronization from device clock differences
+- **Rush Round Enhancement**: Random 33% chance with prominent visual indicators (orange timer, badge, flash animation)
 
 ## Tech Stack
 

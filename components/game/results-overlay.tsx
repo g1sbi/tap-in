@@ -86,6 +86,8 @@ export default function ResultsOverlay({
         return '#FF4458';
       case 'push':
         return '#FFD700';
+      case 'passed':
+        return '#FF8C00';
       default:
         return '#FFFFFF';
     }
@@ -99,6 +101,8 @@ export default function ResultsOverlay({
         return 'LOSS';
       case 'push':
         return 'PUSH';
+      case 'passed':
+        return 'PASSED';
       default:
         return '';
     }
@@ -117,9 +121,17 @@ export default function ResultsOverlay({
             {getResultText(opponentResult)}
           </Text>
           <Text style={styles.pointsChange}>
+            {opponentResult === 'passed' ? (
+              <>
+                <Text style={styles.timeoutPenalty}>-10 TIMEOUT PENALTY</Text>
+              </>
+            ) : (
+              <>
             {opponentPointsChange >= 0 ? '+' : ''}
             {opponentPointsChange}
             {opponentBonuses > 0 && ` +${opponentBonuses} bonus`}
+              </>
+            )}
           </Text>
         </View>
       </Animated.View>
@@ -139,9 +151,17 @@ export default function ResultsOverlay({
             {getResultText(myResult)}
           </Text>
           <Text style={styles.pointsChange}>
+            {myResult === 'passed' ? (
+              <>
+                <Text style={styles.timeoutPenalty}>-10 TIMEOUT PENALTY</Text>
+              </>
+            ) : (
+              <>
             {myPointsChange >= 0 ? '+' : ''}
             {myPointsChange}
             {myBonuses > 0 && ` +${myBonuses} bonus`}
+              </>
+            )}
           </Text>
         </View>
       </Animated.View>
@@ -183,6 +203,11 @@ const styles = StyleSheet.create({
   pointsChange: {
     fontSize: 18,
     color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  timeoutPenalty: {
+    fontSize: 16,
+    color: '#FF8C00',
     fontWeight: '600',
   },
   diceContainer: {

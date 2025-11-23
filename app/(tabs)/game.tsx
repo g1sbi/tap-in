@@ -8,9 +8,10 @@ import type { Prediction } from '@/lib/game-logic';
 import { useGameState } from '@/lib/game-state';
 import { roomManager } from '@/lib/room-manager';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence } from 'react-native-reanimated';
 
 export default function GameScreen() {
   const router = useRouter();
@@ -28,12 +29,17 @@ export default function GameScreen() {
     gameWinner,
     gameOverReason,
     playerId,
+    playerRole,
     lastRoundResults,
+    isRushRound,
     actions,
   } = useGameState();
 
   const [showResults, setShowResults] = useState(false);
-  const isRushRound = round % GAME_CONSTANTS.RUSH_ROUND_INTERVAL === 0 && round > 0;
+  const [showRushBadge, setShowRushBadge] = useState(false);
+  const flashOpacity = useSharedValue(0);
+  const badgeOpacity = useSharedValue(0);
+  const previousRushRound = useRef(false);
 
   const handleQuit = async () => {
     await roomManager.leaveRoom();
@@ -68,6 +74,54 @@ export default function GameScreen() {
       setShowResults(false);
     }
   }, [gamePhase, lastRoundResults]);
+
+  // Handle rush round visual indicators
+  useEffect(() => {
+    let badgeTimeout: NodeJS.Timeout | null = null;
+    
+    // Reset previous rush round state when not in betting phase
+    if (gamePhase !== 'BETTING') {
+      previousRushRound.current = false;
+      setShowRushBadge(false);
+      badgeOpacity.value = 0;
+      flashOpacity.value = 0;
+      return;
+    }
+    
+    // Flash animation when rush round starts (only on transition to rush)
+    if (isRushRound && !previousRushRound.current && gamePhase === 'BETTING') {
+      // Flash overlay: quick bright flash (200ms) then fade out (300ms) = 500ms total
+      // Starts immediately to grab attention
+      flashOpacity.value = withSequence(
+        withTiming(0.4, { duration: 50 }),
+        withTiming(0, { duration: 450 })
+      );
+      
+      // Badge: fade in over 300ms (starts at same time, but slower so flash is noticed first)
+      // Delay badge slightly so flash is the first thing seen
+      badgeTimeout = setTimeout(() => {
+        // Badge will appear - we already checked conditions above
+        setShowRushBadge(true);
+        badgeOpacity.value = withTiming(1, { duration: 300 });
+      }, 100);
+    }
+    
+    // Hide badge when not rush (but keep it if we're in betting phase and it's rush)
+    if (!isRushRound && gamePhase === 'BETTING') {
+      setShowRushBadge(false);
+      badgeOpacity.value = 0;
+    }
+    
+    // Update previous rush round state
+    previousRushRound.current = isRushRound;
+    
+    // Cleanup timeout on unmount or dependency change
+    return () => {
+      if (badgeTimeout) {
+        clearTimeout(badgeTimeout);
+      }
+    };
+  }, [isRushRound, gamePhase]);
 
   const handleBet = (amount: number, prediction: Prediction) => {
     if (betLocked || gamePhase !== 'BETTING') return;
@@ -114,6 +168,8 @@ export default function GameScreen() {
             winStreak={0}
             round={round}
             isOpponent
+            isWinning={opponentScore > myScore}
+            isHost={playerRole === 'guest'}
           />
           <View style={styles.betStatus}>
             {opponentBet ? (
@@ -130,6 +186,11 @@ export default function GameScreen() {
           <View style={styles.currentDice}>
             <Dice value={currentDice} size={120} animated={gamePhase === 'REVEALING'} />
           </View>
+          {showRushBadge && isRushRound && gamePhase === 'BETTING' && (
+            <Animated.View style={[styles.rushBadge, { opacity: badgeOpacity }]}>
+              <Text style={styles.rushBadgeText}>⚡ RUSH ROUND ⚡</Text>
+            </Animated.View>
+          )}
           <View style={styles.timerContainer}>
             {gamePhase === 'BETTING' ? (
               <BettingTimer
@@ -142,6 +203,17 @@ export default function GameScreen() {
             ) : null}
           </View>
         </View>
+        
+        {/* Flash overlay for rush round start */}
+        {isRushRound && (
+          <Animated.View 
+            style={[
+              styles.flashOverlay,
+              { opacity: flashOpacity }
+            ]}
+            pointerEvents="none"
+          />
+        )}
 
         <View style={styles.bettingArea}>
           {gamePhase === 'BETTING' && (
@@ -161,7 +233,13 @@ export default function GameScreen() {
         </View>
 
         <View style={styles.myStats}>
-          <PlayerInfo points={myScore} winStreak={winStreak} round={round} />
+          <PlayerInfo 
+            points={myScore} 
+            winStreak={winStreak} 
+            round={round}
+            isWinning={myScore > opponentScore}
+            isHost={playerRole === 'host'}
+          />
         </View>
       </View>
 
@@ -301,6 +379,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'visible',
+  },
+  rushBadge: {
+    marginTop: 8,
+    marginBottom: 4,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#FF8C00',
+    borderWidth: 2,
+    borderColor: '#FFA500',
+    shadowColor: '#FF8C00',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  rushBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 1.5,
+    textAlign: 'center',
+  },
+  flashOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#FF8C00',
+    pointerEvents: 'none',
+    zIndex: 999,
   },
   rollingText: {
     fontSize: 20,

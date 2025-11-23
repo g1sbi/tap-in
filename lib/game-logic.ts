@@ -1,7 +1,7 @@
 import { BONUS_POINTS, GAME_CONSTANTS, type GameOverReason } from './game-constants';
 
 export type Prediction = 'higher' | 'lower' | '4-or-higher' | '3-or-lower';
-export type RoundResult = 'win' | 'loss' | 'push';
+export type RoundResult = 'win' | 'loss' | 'push' | 'passed';
 
 export interface Bet {
   amount: number;
@@ -116,9 +116,26 @@ export function calculateRoundResults(
   bets: { [playerId: string]: Bet }
 ): RoundResults {
   const playerResults: RoundResults['playerResults'] = {};
-  const bonuses = calculateBonuses(bets, oldDice, newDice);
+  
+  // Filter out passed players (amount === 0) from bonus calculations
+  // Passed players didn't actually compete, so they shouldn't affect bonuses
+  const activeBets = Object.fromEntries(
+    Object.entries(bets).filter(([_, bet]) => bet.amount > 0)
+  );
+  
+  const bonuses = calculateBonuses(activeBets, oldDice, newDice);
 
   Object.entries(bets).forEach(([playerId, bet]) => {
+    // If bet amount is 0, player passed (timeout)
+    if (bet.amount === 0) {
+      playerResults[playerId] = {
+        result: 'passed',
+        pointsChange: -GAME_CONSTANTS.TIMEOUT_PENALTY,
+        bonuses: 0, // No bonuses for passed players
+      };
+      return;
+    }
+
     const result = calculateRoundResult(oldDice, newDice, bet.prediction);
     let pointsChange = 0;
 

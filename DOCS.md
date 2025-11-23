@@ -76,6 +76,7 @@ Initializes the Supabase client with Realtime support.
 - Real-time channel subscriptions
 - Broadcast messaging between players
 - Presence tracking for player connection status
+- Presence-based timer synchronization for accurate multiplayer timing
 
 ### 2. Game State (`lib/game-state.ts`)
 
@@ -96,6 +97,7 @@ Zustand store managing all game state.
 - `betLocked`: Whether player has locked in bet
 - `timeRemaining`: Seconds left in betting phase
 - `gamePhase`: Current phase ('LOBBY' | 'BETTING' | 'REVEALING' | 'RESULTS' | 'GAME_OVER')
+- `isRushRound`: Whether current round is a rush round (5-second timer)
 - `winStreak`: Consecutive wins
 - `lastRoundResults`: Results from last round
 
@@ -104,6 +106,7 @@ Zustand store managing all game state.
 - `startGame()`: Begin gameplay
 - `lockBet()`: Lock in betting choice
 - `setGamePhase()`: Transition between phases
+- `setRushRound()`: Set rush round status
 - `updateScores()`: Update point totals
 - `reset()`: Clear all state
 
@@ -124,11 +127,33 @@ Pure functions for game rules and calculations.
 - **Mirror Bonus**: +10 points if both players bet same direction and both win
 - **Contrarian Bonus**: +5 points if only you win (opponent loses)
 - **Speed Bonus**: +2 points for first player to lock bet
+- **Note**: Bonus points are fixed values and do not scale with rounds
+
+**Timeout/Pass System:**
+- If a player doesn't place a bet before the timer expires, they receive a "PASSED" status
+- Passed players lose 10 points (TIMEOUT_PENALTY)
+- Passed players receive no bonuses
+- The round still proceeds normally (dice is rolled)
+- If both players pass, both lose 10 points and the round continues
 
 **Win Conditions:**
 - Player reaches 300 points
 - Opponent reaches 0 points
 - 20 rounds completed (highest score wins)
+
+### 5. Game Constants (`lib/game-constants.ts`)
+
+Centralized configuration values for game mechanics.
+
+**Key Constants:**
+- `INITIAL_SCORE: 100` - Starting points for both players
+- `WINNING_SCORE: 300` - Points threshold to win instantly
+- `MAX_ROUNDS: 20` - Maximum rounds per game
+- `NORMAL_TIMER_DURATION: 10` - Standard betting phase duration (seconds)
+- `RUSH_TIMER_DURATION: 5` - Rush round betting phase duration (seconds)
+- `RUSH_ROUND_CHANCE: 0.33` - Probability of rush round per round (33%)
+- `ROOM_CODE_LENGTH: 6` - Length of room code for joining games
+- `TIMEOUT_PENALTY: 10` - Points lost when timer expires without bet
 
 ### 4. Room Manager (`lib/room-manager.ts`)
 
@@ -145,7 +170,8 @@ Singleton class managing room lifecycle and real-time communication.
 - `start-game`: Host broadcasts initial dice value
 - `bet-locked`: Player submits bet
 - `dice-result`: Host broadcasts round results
-- `new-round`: Host signals start of new round
+- `new-round`: Host signals start of new round (includes `isRushRound` status)
+- `timer-sync`: Host broadcasts timer synchronization data
 - `game-over`: Game end with final scores
 
 **Host Responsibilities:**
@@ -189,10 +215,28 @@ Countdown timer with increasing visual pressure.
 - `isRushRound`: Whether this is a rush round (5 seconds)
 
 **Features:**
-- Pulsing scale animation (accelerates as time decreases)
-- Color change to red at 3 seconds
+- Pulsing scale animation (accelerates as time decreases, faster on rush rounds)
+- Color change: Orange for rush rounds, red at 3 seconds for normal rounds
 - Haptic feedback at critical moments
-- Larger font size for rush rounds
+- Larger font size for rush rounds (56px vs 48px)
+
+### Player Info (`components/game/player-info.tsx`)
+
+Displays player points, win streak, and round information.
+
+**Props:**
+- `points`: Current point total
+- `winStreak`: Consecutive wins
+- `round`: Current round number
+- `isOpponent`: Whether this is the opponent's info
+- `isWinning`: Whether this player is currently winning (shows crown icon)
+- `isHost`: Whether this player is the host (shows HOST badge)
+
+**Visual Indicators:**
+- **Crown Icon (👑)**: Appears next to the score of the player with more points
+- **HOST Badge**: Small badge in top-left corner showing who created the room
+- Crown updates dynamically as scores change during the game
+- Host badge remains fixed throughout the game
 
 ### Betting Panel (`components/game/betting-panel.tsx`)
 
@@ -269,8 +313,9 @@ Home Screen
 ### 2. Game Round Flow
 
 ```
-BETTING Phase (10 seconds)
+BETTING Phase (10 seconds normal, 5 seconds rush)
 ├── Display current dice value
+├── Rush rounds: Orange timer, "RUSH ROUND" badge, flash animation
 ├── Players select bet amount and prediction
 ├── Timer counts down
 ├── When both players bet → Immediate transition
@@ -690,10 +735,11 @@ Update `app.json` before deployment:
 **Symptoms:** Timers show different values
 
 **Solutions:**
-- This is expected - each client runs own timer
-- Host's timer is authoritative for game flow
-- Guest timer is for display only
-- Round transitions are synchronized via messages
+- Timer synchronization uses Supabase Presence for accurate sync
+- Local time tracking prevents clock skew issues between devices
+- Guest timers ignore network latency for perceived synchronization
+- Both timers should appear synchronized within ~200ms
+- If timers are still off, check network connection quality
 
 #### 4. Build Fails
 
@@ -726,12 +772,14 @@ Update `app.json` before deployment:
 
 ### Debug Mode
 
-Enable debug logging:
+Enable debug logging using the centralized logger:
 
 ```typescript
-// In lib/room-manager.ts, add console.logs:
-console.log('Room message received:', message);
-console.log('Game state:', useGameState.getState());
+import { logger } from '@/lib/logger';
+
+// Debug logging is automatically filtered in production
+logger.debug('RoomManager', 'Room message received', message);
+logger.debug('GameState', 'Current game state', useGameState.getState());
 ```
 
 ### Performance Optimization
@@ -748,6 +796,39 @@ If experiencing lag:
 - Verify network connection quality
 - Consider adding connection status indicator
 - Implement retry logic for failed messages
+
+## Recent Architecture Improvements
+
+### Timer Synchronization System
+
+**Problem:** Timer desynchronization between host and guest devices due to network latency and clock skew.
+
+**Solution:**
+- **Presence-Based Sync**: Host updates Supabase Presence with `roundStartTime` and `timerDuration` for each round
+- **Guest Sync**: Guest actively checks host's presence data and syncs timer when new round data is detected
+- **Clock Skew Immunity**: Timer calculations use local `Date.now()` as reference point, making them immune to device clock differences
+- **Perceived Synchronization**: Guest timers ignore network latency for initial display, ensuring both players see the same countdown
+
+**Implementation Details:**
+- `updatePresenceTimer()`: Host updates presence state with timer info
+- `checkHostTimerUpdate()`: Guest checks and syncs with host's presence data
+- `startTimerWithTimestamp()`: Starts timer using local time reference, accounting for elapsed time
+
+### Rush Round System
+
+**Enhancement:** Rush rounds now occur randomly (33% chance per round) with prominent visual indicators.
+
+**Visual Indicators:**
+- **Orange Timer**: Rush rounds display orange timer color instead of white/red
+- **Rush Badge**: Animated "⚡ RUSH ROUND ⚡" badge appears above timer
+- **Flash Animation**: Orange flash overlay (500ms) when rush round begins
+- **Faster Pulse**: Timer pulse animation accelerates for rush rounds
+
+**Implementation:**
+- `RUSH_ROUND_CHANCE: 0.33` constant in `game-constants.ts`
+- `isRushRound` state in `game-state.ts`
+- Rush status broadcast in `new-round` messages
+- Visual components in `game.tsx` and `betting-timer.tsx`
 
 ## Additional Resources
 

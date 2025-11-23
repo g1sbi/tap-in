@@ -29,6 +29,7 @@ Higher Lower Dice is a fast-paced, simultaneous multiplayer betting game where y
 - **Starting Points**: Both players begin with 100 points
 - **Total Rounds**: 20 rounds per game
 - **Betting Time**: 10 seconds per round (5 seconds on rush rounds)
+- **Timeout Penalty**: If you don't bet before time expires, you'll receive a "PASSED" status and lose 10 points
 - **Goal**: Accumulate the most points or eliminate your opponent
 
 ### How Each Round Works
@@ -111,12 +112,24 @@ Higher Lower Dice is a fast-paced, simultaneous multiplayer betting game where y
 
 ## Rush Rounds
 
-Every 5th round (rounds 5, 10, 15, 20) is a **Rush Round**:
+Rush rounds occur randomly with a **33% chance** each round:
 
 - **Timer**: Reduced to 5 seconds (instead of 10)
-- **Visual Indicator**: Timer appears larger and more intense
+- **Visual Indicators**:
+  - **Orange Timer**: Timer displays in orange color (instead of white/red)
+  - **Rush Badge**: Animated "⚡ RUSH ROUND ⚡" badge appears above the timer
+  - **Flash Animation**: Orange flash overlay when rush round begins
+  - **Faster Pulse**: Timer pulse animation accelerates
 - **Strategy**: Requires faster decision-making
 - **Points**: Same scoring rules apply
+- **Randomness**: Each round has an independent 33% chance of being a rush round
+
+## Visual Indicators
+
+During gameplay, you'll see helpful visual indicators:
+
+- **👑 Crown Icon**: Appears next to the score of the player currently winning. The crown moves between players as scores change.
+- **HOST Badge**: A small badge in the top-left corner of the player card showing who created the room. This remains fixed throughout the game.
 
 ## Win Conditions
 
@@ -191,9 +204,11 @@ The game ends immediately when any of these conditions are met:
    - 50% bets are good middle ground
 
 5. **Rush Round Strategy**
-   - Have a quick decision ready
+   - Watch for visual indicators: orange timer, "RUSH ROUND" badge, flash animation
+   - Have a quick decision ready - you only have 5 seconds
    - Don't overthink - trust your instincts
    - Smaller bets might be safer with less time
+   - Rush rounds can occur at any time (33% chance per round), so stay alert
 
 ### Advanced Tactics
 

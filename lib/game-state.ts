@@ -25,6 +25,7 @@ interface GameState {
   
   timeRemaining: number;
   gamePhase: GamePhase;
+  isRushRound: boolean;
   
   winStreak: number;
   lastRoundResults: RoundResults | null;
@@ -42,9 +43,11 @@ interface GameState {
     unlockBet: () => void;
     setTimeRemaining: (seconds: number) => void;
     setGamePhase: (phase: GamePhase) => void;
+    setRushRound: (isRush: boolean) => void;
     updateScores: (myScore: number, opponentScore: number) => void;
     setWinStreak: (streak: number) => void;
     incrementRound: () => void;
+    setRound: (round: number) => void;
     setLastRoundResults: (results: RoundResults | null) => void;
     setGameWinner: (winner: string | null, reason: string | null) => void;
     reset: () => void;
@@ -79,6 +82,7 @@ export const useGameState = create<GameState>((set) => ({
   
   timeRemaining: GAME_CONSTANTS.NORMAL_TIMER_DURATION,
   gamePhase: 'LOBBY',
+  isRushRound: false,
   
   winStreak: 0,
   lastRoundResults: null,
@@ -97,10 +101,6 @@ export const useGameState = create<GameState>((set) => ({
         opponentScore: GAME_CONSTANTS.INITIAL_SCORE,
         timeRemaining: GAME_CONSTANTS.NORMAL_TIMER_DURATION,
       });
-      const stateAfter = useGameState.getState();
-      if (stateAfter.currentDice !== initialDice) {
-        logger.error('GameState', `Dice mismatch! Expected ${initialDice}, got ${stateAfter.currentDice}`);
-      }
     },
     setCurrentDice: (dice) => {
       logger.debug('GameState', `setCurrentDice called | New dice: ${dice}`);
@@ -108,10 +108,6 @@ export const useGameState = create<GameState>((set) => ({
         currentDice: dice, 
         previousDice: state.currentDice 
       }));
-      const stateAfter = useGameState.getState();
-      if (stateAfter.currentDice !== dice) {
-        logger.error('GameState', `Dice mismatch! Expected ${dice}, got ${stateAfter.currentDice}`);
-      }
     },
     setMyBet: (bet) => set({ myBet: bet }),
     setOpponentBet: (bet) => set({ opponentBet: bet }),
@@ -120,18 +116,16 @@ export const useGameState = create<GameState>((set) => ({
     setTimeRemaining: (seconds) => {
       logger.debug('GameState', `setTimeRemaining called | New: ${seconds}s`);
       set({ timeRemaining: seconds });
-      const stateAfter = useGameState.getState();
-      if (stateAfter.timeRemaining !== seconds) {
-        logger.error('GameState', `Timer mismatch! Expected ${seconds}, got ${stateAfter.timeRemaining}`);
-      }
     },
     setGamePhase: (phase) => set({ gamePhase: phase }),
+    setRushRound: (isRush) => set({ isRushRound: isRush }),
     updateScores: (myScore, opponentScore) => {
       logger.debug('GameState', `updateScores called | My: ${myScore}, Opp: ${opponentScore}`);
       set({ myScore, opponentScore });
     },
     setWinStreak: (streak) => set({ winStreak: streak }),
     incrementRound: () => set((state) => ({ round: state.round + 1 })),
+    setRound: (round) => set({ round }),
     setLastRoundResults: (results) => set({ lastRoundResults: results }),
     setGameWinner: (winner, reason) => set({ gameWinner: winner, gameOverReason: reason }),
     reset: () => set({
@@ -148,6 +142,7 @@ export const useGameState = create<GameState>((set) => ({
       betLocked: false,
       timeRemaining: GAME_CONSTANTS.NORMAL_TIMER_DURATION,
       gamePhase: 'LOBBY',
+      isRushRound: false,
       winStreak: 0,
       lastRoundResults: null,
       gameWinner: null,
