@@ -29,6 +29,7 @@ interface BetLockedData {
 
 interface NewRoundData {
   dice: number;
+  round: number;
   isRushRound?: boolean;
 }
 
@@ -64,6 +65,7 @@ class RoomManager {
   private roundStartTimestamp: number | null = null;
   private hasGameStarted: boolean = false;
   private isRoundPrepared: boolean = false;
+  private hasRolledDice: boolean = false;
   private isLeaving: boolean = false;
 
   /**
@@ -392,8 +394,10 @@ class RoomManager {
    * Prepares round state without starting the timer.
    * Used by guest to set up state before receiving timer-sync.
    * Prevents double execution with isRoundPrepared flag.
+   * 
+   * @param roundNumber - Optional round number from host (for synchronization)
    */
-  private prepareRoundState(): void {
+  private prepareRoundState(roundNumber?: number): void {
     if (this.isGameOver()) {
       logger.debug('RoomManager', 'Game is over, skipping round preparation');
       return;
@@ -410,7 +414,12 @@ class RoomManager {
 
     this.clearTimer();
 
-    this.round++;
+    // Use round number from host if provided (for synchronization), otherwise increment locally
+    if (roundNumber !== undefined) {
+      this.round = roundNumber;
+    } else {
+      this.round++;
+    }
     this.bets = {};
     this.isRoundPrepared = true;
     
@@ -420,7 +429,7 @@ class RoomManager {
     }
     
     actions.setCurrentDice(this.currentDice);
-    // Sync round number to UI state (this.round was incremented above)
+    // Sync round number to UI state
     actions.setRound(this.round);
     actions.setGamePhase('BETTING');
     // Reset rush round state - will be updated when rush status is received from host
@@ -465,6 +474,7 @@ class RoomManager {
     this.round++;
     this.bets = {};
     this.isRoundPrepared = false; // Reset flag for new round
+    this.hasRolledDice = false;  // Reset for new round
     
     // Set round start timestamp
     this.roundStartTimestamp = Date.now();
@@ -490,11 +500,12 @@ class RoomManager {
     // AWAIT to ensure presence is updated before broadcasting messages
     await this.updatePresenceTimer(this.roundStartTimestamp, timerDuration);
     
-    // Broadcast new-round with rush status
+    // Broadcast new-round with rush status and round number
     this.broadcast({
       type: 'new-round',
       data: {
         dice: this.currentDice,
+        round: this.round,
         isRushRound
       }
     });
@@ -539,7 +550,10 @@ class RoomManager {
 
       if (timeLeft <= 0) {
         this.clearTimer();
-        this.forceResolve();
+        // Only host processes timeout and rolls dice
+        if (this.isHost) {
+          this.forceResolve();
+        }
       }
     }, 1000);
   }
@@ -581,7 +595,10 @@ class RoomManager {
 
       if (timeLeft <= 0) {
         this.clearTimer();
-        this.forceResolve();
+        // Only host processes timeout and rolls dice
+        if (this.isHost) {
+          this.forceResolve();
+        }
       }
     }, 100) as any as ReturnType<typeof setInterval>;
   }
@@ -622,6 +639,7 @@ class RoomManager {
   /**
    * Forces resolution of the round when timer expires.
    * Applies timeout penalty to players who didn't bet.
+   * Only host processes the penalty; guest waits for dice-result.
    */
   private forceResolve(): void {
     this.clearTimer();
@@ -629,16 +647,21 @@ class RoomManager {
     const { playerId, opponentId } = useGameState.getState();
     const allPlayerIds = [playerId, opponentId].filter(Boolean) as string[];
 
+    logger.debug('RoomManager', `Timer expired | Role: ${this.isHost ? 'HOST' : 'GUEST'} | Existing bets: ${Object.keys(this.bets).length}`);
+
     // Create bet with amount 0 for players who didn't bet
     // The penalty will be applied in calculateRoundResults when it detects amount === 0
     allPlayerIds.forEach((pid) => {
       if (!this.bets[pid]) {
+        logger.debug('RoomManager', `Creating timeout bet for player ${pid}`);
         this.bets[pid] = {
           amount: 0,
           prediction: 'higher',
           timestamp: Date.now(),
           playerId: pid,
         };
+      } else {
+        logger.debug('RoomManager', `Player ${pid} already has bet: ${this.bets[pid].amount}`);
       }
     });
 
@@ -653,11 +676,19 @@ class RoomManager {
     this.clearTimer();
 
     if (!this.isHost) return;
+    
+    // Prevent double roll in same round
+    if (this.hasRolledDice) {
+      logger.debug('RoomManager', 'Dice already rolled for this round, skipping');
+      return;
+    }
 
     if (this.isGameOver()) {
       logger.debug('RoomManager', 'Game is over, skipping roll');
       return;
     }
+
+    this.hasRolledDice = true;  // Mark as rolled
 
     const newDice = this.generateNewDiceValue();
     logger.debug('RoomManager', `Round ${this.round} | Old: ${this.currentDice} | New: ${newDice}`, this.bets);
@@ -705,18 +736,21 @@ class RoomManager {
   private updateScores(results: RoundResults): void {
     const { playerId, actions } = useGameState.getState();
     
+    logger.debug('RoomManager', `updateScores called | Role: ${this.isHost ? 'HOST' : 'GUEST'} | Scores before:`, { ...this.scores });
+    
     Object.entries(results.playerResults).forEach(([pid, result]) => {
       if (!this.scores[pid]) {
         this.scores[pid] = GAME_CONSTANTS.INITIAL_SCORE;
       }
       
       const oldScore = this.scores[pid];
-      this.scores[pid] += result.pointsChange + result.bonuses;
+      const scoreChange = result.pointsChange + result.bonuses;
+      this.scores[pid] += scoreChange;
       if (this.scores[pid] < GAME_CONSTANTS.MIN_SCORE) {
         this.scores[pid] = GAME_CONSTANTS.MIN_SCORE;
       }
       
-      logger.debug('RoomManager', `Player ${pid}: ${oldScore} -> ${this.scores[pid]} (${result.pointsChange >= 0 ? '+' : ''}${result.pointsChange}, +${result.bonuses} bonus) | Result: ${result.result}`);
+      logger.debug('RoomManager', `Player ${pid}: ${oldScore} -> ${this.scores[pid]} (change: ${scoreChange >= 0 ? '+' : ''}${scoreChange} = ${result.pointsChange >= 0 ? '+' : ''}${result.pointsChange} points + ${result.bonuses} bonus) | Result: ${result.result}`);
       
       if (pid === playerId) {
         if (result.result === 'win') {
@@ -727,6 +761,8 @@ class RoomManager {
         }
       }
     });
+    
+    logger.debug('RoomManager', `Scores after updateScores:`, { ...this.scores });
   }
 
   /**
@@ -871,7 +907,8 @@ class RoomManager {
     
     logger.debug('RoomManager', `Received opponent bet`, this.bets);
     
-    if (Object.keys(this.bets).length === 2 && this.isHost) {
+    // Only roll if both players have bet AND we haven't rolled yet
+    if (Object.keys(this.bets).length === 2 && this.isHost && !this.hasRolledDice) {
       logger.debug('RoomManager', 'Both players locked in, starting dice roll');
       this.rollDice();
     }
@@ -918,18 +955,19 @@ class RoomManager {
     const myScore = scores[this.playerId!] ?? GAME_CONSTANTS.INITIAL_SCORE;
     const oppScore = scores[opponentId || ''] ?? GAME_CONSTANTS.INITIAL_SCORE;
     
-    logger.debug('RoomManager', `Received dice-result | Dice: ${dice}`, { scores, results });
+    logger.debug('RoomManager', `GUEST received dice-result | Dice: ${dice} | Scores from host:`, { scores });
+    logger.debug('RoomManager', `GUEST local scores before update:`, { ...this.scores });
     
     // Log results to verify timeout penalty is present
     Object.entries(results.playerResults).forEach(([pid, result]) => {
-      if (result.result === 'passed') {
-        logger.debug('RoomManager', `Guest: Player ${pid} passed - penalty: ${result.pointsChange} points`);
-      }
+      logger.debug('RoomManager', `GUEST: Player ${pid} result: ${result.result} | Points change: ${result.pointsChange} | Bonuses: ${result.bonuses}`);
     });
     
     this.currentDice = dice;
     // Use scores from host broadcast - they should already include timeout penalties
     this.scores = { ...scores };
+    
+    logger.debug('RoomManager', `GUEST local scores after update from host:`, { ...this.scores });
     
     actions.setCurrentDice(dice);
     actions.updateScores(myScore, oppScore);
@@ -1003,12 +1041,13 @@ class RoomManager {
       actions.setCurrentDice(data.dice);
     }
     
-    // Store rush round status before prepareRoundState() in case it returns early
+    // Store rush round status and round number before prepareRoundState() in case it returns early
     const rushRoundStatus = data.isRushRound;
+    const roundNumber = data.round;
     
-    // Prepare round state but don't start timer - wait for timer-sync from host
+    // Prepare round state with round number from host for synchronization
     // Note: prepareRoundState() resets isRushRound to false, so we set it AFTER
-    this.prepareRoundState();
+    this.prepareRoundState(roundNumber);
     
     // Always set rush round status AFTER prepareRoundState() to avoid it being reset
     // This ensures rush status is set even if prepareRoundState() returned early

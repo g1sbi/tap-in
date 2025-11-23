@@ -26,6 +26,7 @@ Higher Lower Dice is a real-time multiplayer game built with React Native Expo. 
 ### Architecture Pattern
 
 The game follows a **host-guest** pattern:
+
 - **Host**: Creates the room, manages game state, rolls dice, broadcasts results
 - **Guest**: Joins existing room, receives game state updates, displays results
 
@@ -73,6 +74,7 @@ Initializes the Supabase client with Realtime support.
 ```
 
 **Key Features:**
+
 - Real-time channel subscriptions
 - Broadcast messaging between players
 - Presence tracking for player connection status
@@ -83,6 +85,7 @@ Initializes the Supabase client with Realtime support.
 Zustand store managing all game state.
 
 **State Properties:**
+
 - `roomCode`: Current room identifier
 - `playerRole`: 'host' or 'guest'
 - `playerId`: Unique player identifier
@@ -102,6 +105,7 @@ Zustand store managing all game state.
 - `lastRoundResults`: Results from last round
 
 **Actions:**
+
 - `setRoom()`: Initialize room connection
 - `startGame()`: Begin gameplay
 - `lockBet()`: Lock in betting choice
@@ -124,19 +128,25 @@ Pure functions for game rules and calculations.
 - `checkWinConditions(scores, round)`: Checks for game end conditions
 
 **Bonus System:**
+
 - **Mirror Bonus**: +10 points if both players bet same direction and both win
 - **Contrarian Bonus**: +5 points if only you win (opponent loses)
 - **Speed Bonus**: +2 points for first player to lock bet
 - **Note**: Bonus points are fixed values and do not scale with rounds
 
 **Timeout/Pass System:**
+
 - If a player doesn't place a bet before the timer expires, they receive a "PASSED" status
 - Passed players lose 10 points (TIMEOUT_PENALTY)
 - Passed players receive no bonuses
 - The round still proceeds normally (dice is rolled)
 - If both players pass, both lose 10 points and the round continues
+- **Timeout Handling**: Only the HOST processes timeouts and calls `forceResolve()` when the timer expires
+- The GUEST does not call `lockBet(0)` when the timer expires - it simply waits for the `dice-result` message from the HOST
+- This prevents race conditions and ensures consistent game state
 
 **Win Conditions:**
+
 - Player reaches 300 points
 - Opponent reaches 0 points
 - 20 rounds completed (highest score wins)
@@ -146,6 +156,7 @@ Pure functions for game rules and calculations.
 Centralized configuration values for game mechanics.
 
 **Key Constants:**
+
 - `INITIAL_SCORE: 100` - Starting points for both players
 - `WINNING_SCORE: 300` - Points threshold to win instantly
 - `MAX_ROUNDS: 20` - Maximum rounds per game
@@ -165,8 +176,16 @@ Singleton class managing room lifecycle and real-time communication.
 - `joinRoom(code)`: Guest joins existing room
 - `lockBet(amount, prediction)`: Submit bet, broadcast to opponent
 - `leaveRoom()`: Cleanup and disconnect
+- `forceResolve()`: (Host only) Called when timer expires, creates timeout bets for players who didn't bet and rolls dice
+- `rollDice()`: (Host only) Rolls new dice value and calculates round results, protected by `hasRolledDice` flag to prevent double rolls
+
+**Internal State Flags:**
+
+- `hasRolledDice`: Prevents double dice rolls in the same round. Set to `true` when `rollDice()` is called, reset to `false` at the start of each new round
+- `isRoundPrepared`: Prevents double execution of `prepareRoundState()` when both `new-round` and `timer-sync` messages arrive
 
 **Message Types:**
+
 - `start-game`: Host broadcasts initial dice value
 - `bet-locked`: Player submits bet
 - `dice-result`: Host broadcasts round results
@@ -175,18 +194,23 @@ Singleton class managing room lifecycle and real-time communication.
 - `game-over`: Game end with final scores
 
 **Host Responsibilities:**
+
 - Generate room code
 - Roll dice (Math.random)
 - Calculate results
 - Broadcast game state updates
 - Manage round timers
 - Check win conditions
+- Handle timeout penalties: When timer expires, create timeout bets (amount=0) for players who didn't bet and roll dice
+- Prevent double dice rolls: Uses `hasRolledDice` flag to ensure dice is only rolled once per round
 
 **Guest Responsibilities:**
+
 - Join room via code
 - Submit bets
 - Receive and display updates
 - Run local timer (synchronized with host)
+- Wait for timeout resolution: When timer expires, do not call `lockBet(0)` - wait for `dice-result` from HOST
 
 ## Component Documentation
 
@@ -195,11 +219,13 @@ Singleton class managing room lifecycle and real-time communication.
 Animated 3D dice with dot patterns.
 
 **Props:**
+
 - `value`: Dice value (1-6)
 - `size`: Size in pixels (default: 120)
 - `animated`: Whether to play roll animation
 
 **Features:**
+
 - 3D rotation animation on value change
 - Accurate dot positioning for all 6 faces
 - Scale animation on roll
@@ -210,11 +236,13 @@ Animated 3D dice with dot patterns.
 Countdown timer with increasing visual pressure.
 
 **Props:**
+
 - `seconds`: Time remaining
 - `onExpire`: Callback when timer reaches 0
 - `isRushRound`: Whether this is a rush round (5 seconds)
 
 **Features:**
+
 - Pulsing scale animation (accelerates as time decreases, faster on rush rounds)
 - Color change: Orange for rush rounds, red at 3 seconds for normal rounds
 - Haptic feedback at critical moments
@@ -225,6 +253,7 @@ Countdown timer with increasing visual pressure.
 Displays player points, win streak, and round information.
 
 **Props:**
+
 - `points`: Current point total
 - `winStreak`: Consecutive wins
 - `round`: Current round number
@@ -233,16 +262,18 @@ Displays player points, win streak, and round information.
 - `isHost`: Whether this player is the host (shows HOST badge)
 
 **Visual Indicators:**
+
 - **Crown Icon (👑)**: Appears next to the score of the player with more points
 - **HOST Badge**: Small badge in top-left corner showing who created the room
 - Crown updates dynamically as scores change during the game
-- Host badge remains fixed throughout the game
+- Host badge remains visible during gameplay but is hidden during GAME_OVER phase
 
 ### Betting Panel (`components/game/betting-panel.tsx`)
 
 UI for selecting bet amount and prediction.
 
 **Props:**
+
 - `maxAmount`: Maximum betable amount (player's current score)
 - `onBet`: Callback with (amount, prediction)
 - `disabled`: Whether betting is disabled
@@ -250,6 +281,7 @@ UI for selecting bet amount and prediction.
 - `currentDice`: Current dice value (determines which buttons to show)
 
 **Features:**
+
 - Quick bet buttons: 10, 25, 50%, ALL IN
 - **Normal Mode** (dice 2-5): HIGHER/LOWER prediction buttons
 - **Edge Case Mode** (dice 1 or 6): 4 OR HIGHER / 3 OR LOWER buttons
@@ -262,6 +294,7 @@ UI for selecting bet amount and prediction.
 Displays player statistics.
 
 **Props:**
+
 - `points`: Current point total
 - `winStreak`: Consecutive wins
 - `round`: Current round number
@@ -269,6 +302,7 @@ Displays player statistics.
 - `isOpponent`: Whether this is opponent's info
 
 **Features:**
+
 - Animated point counter (smooth transitions)
 - Scale animation on point changes
 - Round progress indicator
@@ -279,6 +313,7 @@ Displays player statistics.
 Full-screen results display with animations.
 
 **Props:**
+
 - `dice`: New dice value
 - `myResult`: Player's round result
 - `myPointsChange`: Points gained/lost
@@ -289,6 +324,7 @@ Full-screen results display with animations.
 - `onDismiss`: Callback when overlay dismisses
 
 **Features:**
+
 - Split-screen animation (opponent top, player bottom)
 - Sequential reveal (opponent → dice → player)
 - Color-coded results (green=win, red=loss, yellow=push)
@@ -305,6 +341,7 @@ Home Screen
 ```
 
 **Lobby Phase:**
+
 - Both players see room code
 - Presence tracking detects when opponent joins
 - 3-second countdown when both players ready
@@ -342,6 +379,7 @@ GAME_OVER Phase
 ### 3. Message Flow
 
 **Host → Guest:**
+
 1. `start-game`: Initial dice value
 2. `bet-locked`: Opponent's bet received
 3. `dice-result`: Round results
@@ -349,9 +387,11 @@ GAME_OVER Phase
 5. `game-over`: End game
 
 **Guest → Host:**
+
 1. `bet-locked`: Player's bet submission
 
 **Bidirectional:**
+
 - Presence updates (automatic via Supabase)
 
 ## Setup & Execution
@@ -370,6 +410,7 @@ npm install
 ```
 
 This installs:
+
 - React Native and Expo packages
 - Supabase client
 - Zustand state management
@@ -391,18 +432,20 @@ This installs:
    - Copy "anon public" key
 
 3. **Create Environment File:**
+
    ```bash
    # Create .env file in project root
    touch .env
    ```
 
 4. **Add Credentials:**
+
    ```env
    EXPO_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
    EXPO_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
    ```
 
-   **Important:** 
+   **Important:**
    - Use `EXPO_PUBLIC_` prefix (required for Expo)
    - Never commit `.env` to git (should be in `.gitignore`)
 
@@ -417,6 +460,7 @@ npm start
 ```
 
 This will:
+
 - Start Metro bundler
 - Open Expo DevTools in browser
 - Display QR code for mobile connection
@@ -424,23 +468,27 @@ This will:
 ### Step 4: Run on Device/Emulator
 
 **Option A: Expo Go (Quick Testing)**
+
 1. Install Expo Go app on your phone
 2. Scan QR code from terminal
 3. App loads on device
 
 **Option B: iOS Simulator (Mac only)**
+
 ```bash
 # Press 'i' in Expo CLI or:
 npx expo start --ios
 ```
 
 **Option C: Android Emulator**
+
 ```bash
 # Press 'a' in Expo CLI or:
 npx expo start --android
 ```
 
 **Option D: Web Browser**
+
 ```bash
 # Press 'w' in Expo CLI or:
 npx expo start --web
@@ -487,6 +535,7 @@ npm run lint
 ### Overview
 
 Expo provides multiple deployment options:
+
 1. **Expo Go** (development only)
 2. **Development Build** (custom native code)
 3. **Production Build** (EAS Build)
@@ -518,6 +567,7 @@ This creates `eas.json` configuration file.
 #### Build for Production
 
 **Android (APK/AAB):**
+
 ```bash
 # Build APK (for direct installation)
 eas build --platform android --profile production
@@ -527,6 +577,7 @@ eas build --platform android --profile production --type app-bundle
 ```
 
 **iOS (IPA):**
+
 ```bash
 # Build for App Store
 eas build --platform ios --profile production
@@ -535,6 +586,7 @@ eas build --platform ios --profile production
 ```
 
 **Both Platforms:**
+
 ```bash
 eas build --platform all --profile production
 ```
@@ -569,12 +621,14 @@ Edit `eas.json` to configure build profiles:
 #### Submit to App Stores
 
 **Google Play Store:**
+
 ```bash
 eas build --platform android --profile production --type app-bundle
 eas submit --platform android
 ```
 
 **Apple App Store:**
+
 ```bash
 eas build --platform ios --profile production
 eas submit --platform ios
@@ -640,6 +694,7 @@ eas build --profile development --platform ios
 
 **EAS Build:**
 Set in `eas.json`:
+
 ```json
 {
   "build": {
@@ -654,6 +709,7 @@ Set in `eas.json`:
 ```
 
 **Or use EAS Secrets:**
+
 ```bash
 # Set secrets
 eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_URL --value "your_url"
@@ -715,6 +771,7 @@ Update `app.json` before deployment:
 **Symptoms:** Room creation/joining fails
 
 **Solutions:**
+
 - Verify `.env` file exists and has correct variables
 - Check Supabase project is active
 - Ensure `EXPO_PUBLIC_` prefix is used
@@ -725,6 +782,7 @@ Update `app.json` before deployment:
 **Symptoms:** Stuck in lobby, opponent never appears
 
 **Solutions:**
+
 - Check both devices are using same Supabase project
 - Verify room code matches exactly
 - Check network connectivity
@@ -735,6 +793,7 @@ Update `app.json` before deployment:
 **Symptoms:** Timers show different values
 
 **Solutions:**
+
 - Timer synchronization uses Supabase Presence for accurate sync
 - Local time tracking prevents clock skew issues between devices
 - Guest timers ignore network latency for perceived synchronization
@@ -746,6 +805,7 @@ Update `app.json` before deployment:
 **Symptoms:** EAS build errors
 
 **Solutions:**
+
 - Check `eas.json` configuration
 - Verify environment variables are set
 - Check Expo account has build credits
@@ -756,6 +816,7 @@ Update `app.json` before deployment:
 **Symptoms:** App closes immediately
 
 **Solutions:**
+
 - Check console for error messages
 - Verify all dependencies installed
 - Clear Metro bundler cache: `npx expo start -c`
@@ -766,6 +827,7 @@ Update `app.json` before deployment:
 **Symptoms:** Dice appears static
 
 **Solutions:**
+
 - Verify `react-native-reanimated` is installed
 - Check Reanimated is imported in root: `import 'react-native-reanimated'`
 - Ensure native code is rebuilt (development build)
@@ -792,6 +854,7 @@ logger.debug('GameState', 'Current game state', useGameState.getState());
 ### Network Issues
 
 If experiencing lag:
+
 - Check Supabase project region (should match users)
 - Verify network connection quality
 - Consider adding connection status indicator
@@ -804,12 +867,14 @@ If experiencing lag:
 **Problem:** Timer desynchronization between host and guest devices due to network latency and clock skew.
 
 **Solution:**
+
 - **Presence-Based Sync**: Host updates Supabase Presence with `roundStartTime` and `timerDuration` for each round
 - **Guest Sync**: Guest actively checks host's presence data and syncs timer when new round data is detected
 - **Clock Skew Immunity**: Timer calculations use local `Date.now()` as reference point, making them immune to device clock differences
 - **Perceived Synchronization**: Guest timers ignore network latency for initial display, ensuring both players see the same countdown
 
 **Implementation Details:**
+
 - `updatePresenceTimer()`: Host updates presence state with timer info
 - `checkHostTimerUpdate()`: Guest checks and syncs with host's presence data
 - `startTimerWithTimestamp()`: Starts timer using local time reference, accounting for elapsed time
@@ -819,12 +884,14 @@ If experiencing lag:
 **Enhancement:** Rush rounds now occur randomly (33% chance per round) with prominent visual indicators.
 
 **Visual Indicators:**
+
 - **Orange Timer**: Rush rounds display orange timer color instead of white/red
 - **Rush Badge**: Animated "⚡ RUSH ROUND ⚡" badge appears above timer
 - **Flash Animation**: Orange flash overlay (500ms) when rush round begins
 - **Faster Pulse**: Timer pulse animation accelerates for rush rounds
 
 **Implementation:**
+
 - `RUSH_ROUND_CHANCE: 0.33` constant in `game-constants.ts`
 - `isRushRound` state in `game-state.ts`
 - Rush status broadcast in `new-round` messages
@@ -841,8 +908,8 @@ If experiencing lag:
 ## Support
 
 For issues or questions:
+
 1. Check this documentation
 2. Review Expo/Supabase documentation
 3. Check GitHub issues (if applicable)
 4. Contact project maintainer
-

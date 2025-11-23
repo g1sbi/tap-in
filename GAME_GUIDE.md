@@ -29,7 +29,7 @@ Higher Lower Dice is a fast-paced, simultaneous multiplayer betting game where y
 - **Starting Points**: Both players begin with 100 points
 - **Total Rounds**: 20 rounds per game
 - **Betting Time**: 10 seconds per round (5 seconds on rush rounds)
-- **Timeout Penalty**: If you don't bet before time expires, you'll receive a "PASSED" status and lose 10 points
+- **Timeout Penalty**: If you don't bet before time expires, you'll receive a "PASSED" status and lose 10 points. The timeout is automatically handled by the game - you don't need to do anything if you miss the timer.
 - **Goal**: Accumulate the most points or eliminate your opponent
 
 ### How Each Round Works
@@ -129,7 +129,7 @@ Rush rounds occur randomly with a **33% chance** each round:
 During gameplay, you'll see helpful visual indicators:
 
 - **👑 Crown Icon**: Appears next to the score of the player currently winning. The crown moves between players as scores change.
-- **HOST Badge**: A small badge in the top-left corner of the player card showing who created the room. This remains fixed throughout the game.
+- **HOST Badge**: A small badge in the top-left corner of the player card showing who created the room. This badge is visible during gameplay but is hidden during the final game over screen.
 
 ## Win Conditions
 
@@ -150,21 +150,25 @@ The game ends immediately when any of these conditions are met:
 ## Game Phases
 
 ### Lobby Phase
+
 - Waiting for opponent to join
 - Room code displayed
 - Status indicators show connection state
 
 ### Betting Phase
+
 - 10-second timer counting down
 - Select bet amount and prediction
 - Lock in your bet
 - See opponent's status (thinking/locked in)
 
 ### Revealing Phase
+
 - Brief animation showing dice roll
 - Builds anticipation
 
 ### Results Phase
+
 - Split-screen results display
 - Shows your result vs opponent's result
 - Displays points gained/lost
@@ -172,6 +176,7 @@ The game ends immediately when any of these conditions are met:
 - Lasts 4 seconds
 
 ### Game Over Phase
+
 - Final scores displayed
 - Winner announced
 - Auto-returns to home screen after 3 seconds
@@ -237,6 +242,7 @@ The game ends immediately when any of these conditions are met:
 ### Normal Mode (Dice = 2, 3, 4, or 5)
 
 When current dice is:
+
 - **2**: HIGHER = 67% chance (4/6), LOWER = 17% chance (1/6), PUSH = 17% (1/6)
 - **3**: HIGHER = 50% chance (3/6), LOWER = 33% chance (2/6), PUSH = 17% (1/6)
 - **4**: HIGHER = 33% chance (2/6), LOWER = 50% chance (3/6), PUSH = 17% (1/6)
@@ -245,6 +251,7 @@ When current dice is:
 ### Edge Case Mode (Dice = 1 or 6)
 
 When current dice is **1** or **6**:
+
 - **4 OR HIGHER**: 50% chance (3/6 - rolls 4, 5, or 6 win)
 - **3 OR LOWER**: 50% chance (3/6 - rolls 1, 2, or 3 win)
 - **No push possible** - outcomes are always win or loss
@@ -259,30 +266,35 @@ When current dice is **1** or **6**:
 ## Common Scenarios
 
 ### Scenario 1: Edge Case Bet
+
 - Current dice: **1** (Edge Case Mode)
 - Your bet: 25 points on **4 OR HIGHER**
 - New dice: **5**
 - Result: **WIN** → +25 points (5 is in range 4-6)
 
 ### Scenario 2: Risky Bet
+
 - Current dice: **4**
 - Your bet: 50 points on HIGHER
 - New dice: **2**
 - Result: **LOSS** → -50 points
 
 ### Scenario 3: Push
+
 - Current dice: **3** (Normal Mode)
 - Your bet: 30 points on HIGHER
 - New dice: **3**
 - Result: **PUSH** → 0 points (bet returned)
 
 ### Scenario 3b: Edge Case - No Push
+
 - Current dice: **6** (Edge Case Mode)
 - Your bet: 30 points on **3 OR LOWER**
 - New dice: **6**
 - Result: **LOSS** → -30 points (6 is not in range 1-3, no push possible)
 
 ### Scenario 4: Mirror Bonus
+
 - Current dice: **2**
 - You bet: 20 points on HIGHER
 - Opponent bet: 25 points on HIGHER
@@ -290,6 +302,7 @@ When current dice is **1** or **6**:
 - Result: Both WIN → Each gets +20/+25 points + 10 bonus
 
 ### Scenario 5: Contrarian Bonus
+
 - Current dice: **3**
 - You bet: 30 points on HIGHER
 - Opponent bet: 25 points on LOWER
@@ -324,20 +337,24 @@ When current dice is **1** or **6**:
 ## Troubleshooting
 
 ### Can't See Opponent's Bet
+
 - Opponent's bet amount is hidden until both players lock in
 - You'll see "Locked In" status but not the amount
 - This prevents copying opponent's strategy
 
 ### Timer Running Out
+
 - If timer expires, you automatically lose 10 points
 - Always try to lock in a bet, even if small
 
 ### Connection Issues
+
 - If opponent disconnects, game ends
 - You win by default
 - Return to home screen to start a new game
 
 ### Game Stuck
+
 - If game seems frozen, try leaving and rejoining
 - Make sure both players are connected
 - Check your internet connection
@@ -387,6 +404,7 @@ A: Currently, the game requires two players. You could practice by playing with 
 ### Point Calculation Example
 
 Round 1:
+
 - You have: 100 points
 - Current dice: 3
 - You bet: 25 points on HIGHER
@@ -413,9 +431,8 @@ Round 1:
 - But game ends when you reach 0 or below
 - Opponent wins immediately
 
-## Enjoy the Game!
+## Enjoy the Game
 
 Higher Lower Dice is all about quick thinking, risk management, and a bit of luck. Master the probabilities, manage your points wisely, and outsmart your opponent!
 
 Good luck and have fun! 🎲
-

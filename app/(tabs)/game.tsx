@@ -3,15 +3,14 @@ import BettingTimer from '@/components/game/betting-timer';
 import Dice from '@/components/game/dice';
 import PlayerInfo from '@/components/game/player-info';
 import ResultsOverlay from '@/components/game/results-overlay';
-import { GAME_CONSTANTS } from '@/lib/game-constants';
 import type { Prediction } from '@/lib/game-logic';
 import { useGameState } from '@/lib/game-state';
 import { roomManager } from '@/lib/room-manager';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence } from 'react-native-reanimated';
 
 export default function GameScreen() {
   const router = useRouter();
@@ -77,7 +76,7 @@ export default function GameScreen() {
 
   // Handle rush round visual indicators
   useEffect(() => {
-    let badgeTimeout: NodeJS.Timeout | null = null;
+    let badgeTimeout: ReturnType<typeof setTimeout> | null = null;
     
     // Reset previous rush round state when not in betting phase
     if (gamePhase !== 'BETTING') {
@@ -88,8 +87,11 @@ export default function GameScreen() {
       return;
     }
     
-    // Flash animation when rush round starts (only on transition to rush)
-    if (isRushRound && !previousRushRound.current && gamePhase === 'BETTING') {
+    // Only trigger flash animation when transitioning from non-rush to rush
+    // This prevents false triggers when isRushRound is reset and then set again
+    const isTransitioningToRush = isRushRound && !previousRushRound.current;
+    
+    if (isTransitioningToRush) {
       // Flash overlay: quick bright flash (200ms) then fade out (300ms) = 500ms total
       // Starts immediately to grab attention
       flashOpacity.value = withSequence(
@@ -100,7 +102,6 @@ export default function GameScreen() {
       // Badge: fade in over 300ms (starts at same time, but slower so flash is noticed first)
       // Delay badge slightly so flash is the first thing seen
       badgeTimeout = setTimeout(() => {
-        // Badge will appear - we already checked conditions above
         setShowRushBadge(true);
         badgeOpacity.value = withTiming(1, { duration: 300 });
       }, 100);
@@ -112,8 +113,11 @@ export default function GameScreen() {
       badgeOpacity.value = 0;
     }
     
-    // Update previous rush round state
-    previousRushRound.current = isRushRound;
+    // Update previous rush round state only when we're in BETTING phase
+    // This ensures we track the actual rush state, not intermediate resets
+    if (gamePhase === 'BETTING') {
+      previousRushRound.current = isRushRound;
+    }
     
     // Cleanup timeout on unmount or dependency change
     return () => {
@@ -129,9 +133,9 @@ export default function GameScreen() {
   };
 
   const handleTimerExpire = () => {
-    if (gamePhase === 'BETTING' && !betLocked) {
-      roomManager.lockBet(0, 'higher');
-    }
+    // Timer expired - HOST will handle timeout in RoomManager.forceResolve()
+    // GUEST will receive dice-result from HOST
+    // No action needed here
   };
 
   const handleResultsDismiss = () => {
@@ -169,7 +173,7 @@ export default function GameScreen() {
             round={round}
             isOpponent
             isWinning={opponentScore > myScore}
-            isHost={playerRole === 'guest'}
+            isHost={gamePhase !== 'GAME_OVER' && playerRole === 'guest'}
           />
           <View style={styles.betStatus}>
             {opponentBet ? (
@@ -238,7 +242,7 @@ export default function GameScreen() {
             winStreak={winStreak} 
             round={round}
             isWinning={myScore > opponentScore}
-            isHost={playerRole === 'host'}
+            isHost={gamePhase !== 'GAME_OVER' && playerRole === 'host'}
           />
         </View>
       </View>

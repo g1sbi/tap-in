@@ -120,7 +120,10 @@ export const useGameState = create<GameState>((set) => ({
     setGamePhase: (phase) => set({ gamePhase: phase }),
     setRushRound: (isRush) => set({ isRushRound: isRush }),
     updateScores: (myScore, opponentScore) => {
-      logger.debug('GameState', `updateScores called | My: ${myScore}, Opp: ${opponentScore}`);
+      const current = useGameState.getState();
+      const myChange = myScore - current.myScore;
+      const oppChange = opponentScore - current.opponentScore;
+      logger.debug('GameState', `updateScores called | My: ${current.myScore} -> ${myScore} (${myChange >= 0 ? '+' : ''}${myChange}) | Opp: ${current.opponentScore} -> ${opponentScore} (${oppChange >= 0 ? '+' : ''}${oppChange})`);
       set({ myScore, opponentScore });
     },
     setWinStreak: (streak) => set({ winStreak: streak }),
