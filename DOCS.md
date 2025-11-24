@@ -45,7 +45,7 @@ dAIce-game/
 │       └── game.tsx             # Main game screen
 ├── components/
 │   └── game/
-│       ├── dice.tsx             # Animated 3D dice component
+│       ├── dice-2d.tsx         # Animated dice component with 3D-like appearance
 │       ├── betting-timer.tsx   # Countdown timer with visual pressure
 │       ├── betting-panel.tsx   # Bet amount selection + prediction buttons
 │       ├── player-info.tsx     # Points, streak, round display
@@ -341,22 +341,99 @@ Singleton class managing room lifecycle and real-time communication.
 
 ## Component Documentation
 
-### Dice Component (`components/game/dice.tsx`)
+### Dice Component (`components/game/dice-2d.tsx`)
 
-Animated 3D dice with dot patterns.
+Animated dice component using React Native transforms with 3D-like appearance.
 
 **Props:**
 
 - `value`: Dice value (1-6)
 - `size`: Size in pixels (default: 120)
-- `animated`: Whether to play roll animation
+- `animated`: Whether to animate on value change
 
 **Features:**
 
-- 3D rotation animation on value change
-- Accurate dot positioning for all 6 faces
-- Scale animation on roll
-- Shadow and elevation for depth
+- 6 faces positioned with 3D rotations
+- Simulated 3D appearance using CSS transforms
+- `backfaceVisibility: 'hidden'` for realistic face visibility
+- Lightweight and performant
+- Used in home screen, game screen, and results overlay
+- Smooth rotation animations on all axes
+
+**Implementation:**
+
+- All 6 faces rendered simultaneously
+- Each face shows correct dice value (1-6)
+- Faces rotate in 3D space using rotateX, rotateY transforms
+- Hidden faces automatically hidden via backfaceVisibility
+- Shadows and borders for depth perception
+
+### Home Dice (`components/home/home-dice.tsx`)
+
+Interactive dice wrapper for the home screen with touch interaction.
+
+**Features:**
+
+- Wraps Dice component with rotation animations
+- Continuous slow rotation animation
+- Touch interaction with haptic feedback
+- Spring animations on press
+- Random dice value changes on tap
+- Uses Pressable for reliable touch handling
+
+**Animation:**
+
+- Continuous rotation on X, Y, Z axes (different speeds: 8s, 10s, 12s)
+- Quick spin animation on touch
+- Scale bounce effect
+- Smooth transitions via React Native Reanimated
+
+### Dice Component (`components/game/dice-2d.tsx`)
+
+Animated dice component using React Native transforms with 3D-like appearance.
+
+**Props:**
+
+- `value`: Dice value (1-6)
+- `size`: Size in pixels (default: 120)
+- `animated`: Whether to animate on value change
+
+**Features:**
+
+- 6 faces positioned with 3D rotations
+- Simulated 3D appearance using CSS transforms
+- `backfaceVisibility: 'hidden'` for realistic face visibility
+- Lightweight and performant
+- Used in home screen, game screen, and results overlay
+- Smooth rotation animations on all axes
+
+**Implementation:**
+
+- All 6 faces rendered simultaneously
+- Each face shows correct dice value (1-6)
+- Faces rotate in 3D space using rotateX, rotateY transforms
+- Hidden faces automatically hidden via backfaceVisibility
+- Shadows and borders for depth perception
+
+### Home Dice (`components/home/home-dice.tsx`)
+
+Interactive dice wrapper for the home screen with touch interaction.
+
+**Features:**
+
+- Wraps Dice component with rotation animations
+- Continuous slow rotation animation
+- Touch interaction with haptic feedback
+- Spring animations on press
+- Random dice value changes on tap
+- Uses Pressable for reliable touch handling
+
+**Animation:**
+
+- Continuous rotation on X, Y, Z axes (different speeds: 8s, 10s, 12s)
+- Quick spin animation on touch
+- Scale bounce effect
+- Smooth transitions via React Native Reanimated
 
 ### Betting Timer (`components/game/betting-timer.tsx`)
 

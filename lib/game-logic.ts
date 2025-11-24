@@ -126,20 +126,19 @@ export function calculateRoundResults(
   
   const bonuses = calculateBonuses(activeBets, oldDice, newDice);
 
+  // First pass: calculate results for all players
+  const bettingPlayerResults: { [playerId: string]: { result: RoundResult; betAmount: number } } = {};
+  
   Object.entries(bets).forEach(([playerId, bet]) => {
-    // If bet amount is 0, player passed (timeout)
     if (bet.amount === 0) {
-      playerResults[playerId] = {
-        result: 'passed',
-        pointsChange: -gameConfig.TIMEOUT_PENALTY,
-        bonuses: 0, // No bonuses for passed players
-      };
+      // Will handle passed players in second pass
       return;
     }
 
     const result = calculateRoundResult(oldDice, newDice, bet.prediction);
+    bettingPlayerResults[playerId] = { result, betAmount: bet.amount };
+    
     let pointsChange = 0;
-
     if (result === 'win') {
       pointsChange = bet.amount;
     } else if (result === 'loss') {
@@ -150,6 +149,34 @@ export function calculateRoundResults(
       result,
       pointsChange,
       bonuses: bonuses[playerId] || 0,
+    };
+  });
+
+  // Second pass: handle passed players with dynamic penalty logic
+  Object.entries(bets).forEach(([playerId, bet]) => {
+    if (bet.amount !== 0) {
+      return; // Already handled in first pass
+    }
+
+    // Find opponent who bet and won
+    const opponentId = Object.keys(bettingPlayerResults).find(
+      (id) => id !== playerId && bettingPlayerResults[id].result === 'win'
+    );
+
+    let penalty = gameConfig.TIMEOUT_PENALTY; // Default penalty
+
+    if (opponentId) {
+      const opponentBetAmount = bettingPlayerResults[opponentId].betAmount;
+      // Apply dynamic penalty if opponent won more than 21 points (base amount)
+      if (opponentBetAmount > 21) {
+        penalty = Math.ceil(opponentBetAmount / 2);
+      }
+    }
+
+    playerResults[playerId] = {
+      result: 'passed',
+      pointsChange: -penalty,
+      bonuses: 0, // No bonuses for passed players
     };
   });
 

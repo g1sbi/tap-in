@@ -645,16 +645,16 @@ class RoomManager {
   private forceResolve(): void {
     this.clearTimer();
 
-    const { playerId, opponentId } = useGameState.getState();
-    const allPlayerIds = [playerId, opponentId].filter(Boolean) as string[];
+    // Use this.scores to get all active players (more reliable than game state)
+    const allPlayerIds = Object.keys(this.scores);
 
-    logger.debug('RoomManager', `Timer expired | Role: ${this.isHost ? 'HOST' : 'GUEST'} | Existing bets: ${Object.keys(this.bets).length}`);
+    logger.debug('RoomManager', `Timer expired | Role: ${this.isHost ? 'HOST' : 'GUEST'} | Active players: ${allPlayerIds.length} | Existing bets: ${Object.keys(this.bets).length}`);
 
     // Create bet with amount 0 for players who didn't bet
     // The penalty will be applied in calculateRoundResults when it detects amount === 0
     allPlayerIds.forEach((pid) => {
       if (!this.bets[pid]) {
-        logger.debug('RoomManager', `Creating timeout bet for player ${pid}`);
+        logger.debug('RoomManager', `Creating timeout bet for player ${pid} - will apply ${gameConfig.TIMEOUT_PENALTY} penalty`);
         this.bets[pid] = {
           amount: 0,
           prediction: 'higher',

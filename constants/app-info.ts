@@ -7,13 +7,13 @@
 
 export const APP_INFO = {
   /** App version number (e.g., "0.12.0") */
-  VERSION: '0.12.0',
+  VERSION: '0.15.0',
   
   /** App title displayed on home screen */
   TITLE: 'DICE RUSH!',
   
   /** App subtitle displayed on home screen */
-  SUBTITLE: 'Simultaneous Multiplayer Betting',
+  SUBTITLE: 'The Party Betting Game',
   
   /** Version label prefix (e.g., "Early Access", "Beta", "v1.0") */
   VERSION_LABEL: 'Early Access',

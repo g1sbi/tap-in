@@ -16,6 +16,13 @@ Get the game running in 5 minutes!
 npm install
 ```
 
+**Note:** This will install all dependencies including:
+- Core React Native and Expo packages
+- Supabase client for real-time multiplayer
+- All other required packages
+
+If you're setting up on a new machine, this single command installs everything needed. No additional setup required.
+
 ### 2. Create Supabase Project (2 minutes)
 
 1. Go to [supabase.com](https://supabase.com) and sign up/login

@@ -1,6 +1,6 @@
 import BettingPanel from '@/components/game/betting-panel';
 import BettingTimer from '@/components/game/betting-timer';
-import Dice from '@/components/game/dice';
+import Dice from '@/components/game/dice-2d';
 import PlayerInfo from '@/components/game/player-info';
 import ResultsOverlay from '@/components/game/results-overlay';
 import type { Prediction } from '@/lib/game-logic';

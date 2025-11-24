@@ -142,11 +142,11 @@ const styles = StyleSheet.create({
   },
   quickBets: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 12,
     justifyContent: 'center',
   },
   betButton: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 10,
     backgroundColor: '#2A2A2A',

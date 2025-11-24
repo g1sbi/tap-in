@@ -8,7 +8,7 @@ import Animated, {
   interpolate,
   Easing,
 } from 'react-native-reanimated';
-import Dice from './dice';
+import Dice from './dice-2d';
 import type { RoundResult } from '@/lib/game-logic';
 
 interface ResultsOverlayProps {
@@ -123,7 +123,7 @@ export default function ResultsOverlay({
           <Text style={styles.pointsChange}>
             {opponentResult === 'passed' ? (
               <>
-                <Text style={styles.timeoutPenalty}>-10 TIMEOUT PENALTY</Text>
+                <Text style={styles.timeoutPenalty}>{opponentPointsChange} TIMEOUT PENALTY</Text>
               </>
             ) : (
               <>
@@ -153,7 +153,7 @@ export default function ResultsOverlay({
           <Text style={styles.pointsChange}>
             {myResult === 'passed' ? (
               <>
-                <Text style={styles.timeoutPenalty}>-10 TIMEOUT PENALTY</Text>
+                <Text style={styles.timeoutPenalty}>{myPointsChange} TIMEOUT PENALTY</Text>
               </>
             ) : (
               <>
