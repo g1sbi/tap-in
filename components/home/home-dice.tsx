@@ -57,7 +57,7 @@ export default function HomeDice({ size = 120 }: HomeDiceProps) {
     setTimeout(() => {
       changeDiceValue();
     }, (ROTATION_DURATION / 2) - FACE_CHANGE_OFFSET);
-    
+
     // Single 180° rotation with pause, then call itself again
     // Using runOnJS to avoid stack overflow from worklet recursion
     rotationY.value = withSequence(
@@ -150,9 +150,9 @@ export default function HomeDice({ size = 120 }: HomeDiceProps) {
         styles.pressable,
         pressed && styles.pressablePressed,
       ]}>
-          <Animated.View style={[styles.container, { width: size, height: size }, animatedStyle]}>
+      <Animated.View style={[styles.container, { width: size, height: size }, animatedStyle]}>
             <Dice value={diceValue} size={size} animated={false} variant="transparent" />
-          </Animated.View>
+      </Animated.View>
     </Pressable>
   );
 }

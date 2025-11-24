@@ -72,17 +72,17 @@ const Dot = ({ size, variant }: DotProps) => {
     : styles.dotSolid;
   
   return (
-    <View
-      style={[
+  <View
+    style={[
         dotStyle,
-        {
-          width: size * 0.15,
-          height: size * 0.15,
-          borderRadius: (size * 0.15) / 2,
-        },
-      ]}
-    />
-  );
+      {
+        width: size * 0.15,
+        height: size * 0.15,
+        borderRadius: (size * 0.15) / 2,
+      },
+    ]}
+  />
+);
 };
 
 interface DiceFaceProps {

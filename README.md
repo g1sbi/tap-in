@@ -79,7 +79,9 @@ npx expo start
 - Each round shows the current dice value
 - Players have 10 seconds (5 seconds on rush rounds) to bet
 - Rush rounds occur randomly (33% chance) with orange timer, "RUSH ROUND" badge, and flash animation
-- **Timeout Penalty**: If a player doesn't bet before the timer expires, they receive a "PASSED" status and lose 10 points
+- **Timeout Penalty**: If a player doesn't bet before the timer expires, they receive a "PASSED" status and lose points:
+  - Base penalty: 10 points (if no opponent won or opponent's bet ≤21 points)
+  - Dynamic penalty: If opponent won with bet >21 points, penalty = `ceil(opponentBetAmount / 2)` points
 - Correct prediction: +bet amount
 - Wrong prediction: -bet amount
 - Push (same number): bet returned, no change

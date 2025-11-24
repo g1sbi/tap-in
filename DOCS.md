@@ -137,10 +137,17 @@ Pure functions for game rules and calculations.
 **Timeout/Pass System:**
 
 - If a player doesn't place a bet before the timer expires, they receive a "PASSED" status
-- Passed players lose 10 points (TIMEOUT_PENALTY)
+- **Penalty Calculation**:
+  - **Base Penalty**: 10 points (TIMEOUT_PENALTY) - applied when no opponent won or opponent's bet was ≤21 points
+  - **Dynamic Penalty**: If opponent bet and won with amount >21 points, penalty = `ceil(opponentBetAmount / 2)`
+  - Examples:
+    - Opponent bet 25 and won → penalty = 13 points (ceil(25/2))
+    - Opponent bet 50 and won → penalty = 25 points (ceil(50/2))
+    - Opponent bet 100 and won → penalty = 50 points (ceil(100/2))
+    - Opponent bet 20 and won → penalty = 10 points (default, since 20 ≤ 21)
 - Passed players receive no bonuses
 - The round still proceeds normally (dice is rolled)
-- If both players pass, both lose 10 points and the round continues
+- If both players pass, both lose the base penalty (10 points) and the round continues
 - **Timeout Handling**: Only the HOST processes timeouts and calls `forceResolve()` when the timer expires
 - The GUEST does not call `lockBet(0)` when the timer expires - it simply waits for the `dice-result` message from the HOST
 - This prevents race conditions and ensures consistent game state
@@ -171,7 +178,7 @@ Contains the default values for all game mechanics. This is the single source of
 - `ROOM_CODE_LENGTH: 6` - Length of room code for joining games
 - `ROOM_CODE_MIN: 100000` - Minimum room code value
 - `ROOM_CODE_MAX: 999999` - Maximum room code value
-- `TIMEOUT_PENALTY: 10` - Points lost when timer expires without bet
+- `TIMEOUT_PENALTY: 10` - Base penalty points lost when timer expires without bet (dynamic penalty may apply if opponent won with bet >21 points)
 - `RESULTS_DISPLAY_DURATION: 4000` - Duration to display results overlay (ms)
 - `COUNTDOWN_DURATION: 3000` - Initial countdown duration (ms)
 - `DICE_ROLL_DELAY: 800` - Dice roll animation delay (ms)

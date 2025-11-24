@@ -29,7 +29,10 @@ DICE RUSH! is a fast-paced, simultaneous multiplayer betting game where you and 
 - **Starting Points**: Both players begin with 100 points
 - **Total Rounds**: 20 rounds per game
 - **Betting Time**: 10 seconds per round (5 seconds on rush rounds)
-- **Timeout Penalty**: If you don't bet before time expires, you'll receive a "PASSED" status and lose 10 points. The timeout is automatically handled by the game - you don't need to do anything if you miss the timer.
+- **Timeout Penalty**: If you don't bet before time expires, you'll receive a "PASSED" status and lose points based on a dynamic penalty system:
+  - Base penalty: 10 points (if no opponent won or opponent's bet ≤21 points)
+  - Dynamic penalty: If opponent won with bet >21 points, you lose `ceil(opponentBetAmount / 2)` points
+  - The timeout is automatically handled by the game - you don't need to do anything if you miss the timer.
 - **Goal**: Accumulate the most points or eliminate your opponent
 
 ### How Each Round Works
@@ -106,9 +109,18 @@ DICE RUSH! is a fast-paced, simultaneous multiplayer betting game where you and 
 
 ### Penalties
 
-- **No Bet Submitted**: -10 points
-  - If you don't lock in a bet before time expires
-  - Your opponent still gets their normal result
+- **No Bet Submitted (Timeout Penalty)**
+  - If you don't lock in a bet before time expires, you receive a "PASSED" status
+  - **Base Penalty**: -10 points (applied when no opponent won or opponent's bet was ≤21 points)
+  - **Dynamic Penalty**: If your opponent bet and won with amount >21 points, you lose `ceil(opponentBetAmount / 2)` points
+  - Examples:
+    - Opponent bet 25 and won → You lose 13 points (ceil(25/2))
+    - Opponent bet 50 and won → You lose 25 points (ceil(50/2))
+    - Opponent bet 100 and won → You lose 50 points (ceil(100/2))
+    - Opponent bet 20 and won → You lose 10 points (default, since 20 ≤ 21)
+  - Your opponent still gets their normal result (points from their bet)
+  - You receive no bonuses
+  - The round continues normally (dice is rolled)
 
 ## Rush Rounds
 
@@ -308,6 +320,24 @@ When current dice is **1** or **6**:
 - Opponent bet: 25 points on LOWER
 - New dice: **6**
 - Result: You WIN, Opponent LOSS → You get +30 + 5 bonus
+
+### Scenario 6: Timeout Penalty (Base)
+
+- Current dice: **4**
+- You: Didn't bet (timer expired)
+- Opponent bet: 20 points on HIGHER
+- New dice: **5**
+- Result: You PASSED → You lose 10 points (base penalty, since opponent bet ≤21)
+- Opponent: WIN → +20 points
+
+### Scenario 7: Timeout Penalty (Dynamic)
+
+- Current dice: **2**
+- You: Didn't bet (timer expired)
+- Opponent bet: 50 points on HIGHER
+- New dice: **6**
+- Result: You PASSED → You lose 25 points (dynamic penalty: ceil(50/2) = 25, since opponent bet >21 and won)
+- Opponent: WIN → +50 points
 
 ## Tips for Success
 
