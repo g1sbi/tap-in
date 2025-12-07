@@ -1,9 +1,9 @@
 import { RealtimeChannel } from '@supabase/supabase-js';
-import { gameConfig } from './game-config';
-import { type GameOverReason } from './game-constants';
-import type { Bet, Prediction, RoundResults } from './game-logic';
-import { calculateRoundResults, checkWinConditions } from './game-logic';
-import { useGameState } from './game-state';
+import { gameConfig } from '@/games/dice-rush/lib/game-config';
+import { type GameOverReason } from '@/games/dice-rush/lib/game-constants';
+import type { Bet, Prediction, RoundResults } from '@/games/dice-rush/lib/game-logic';
+import { calculateRoundResults, checkWinConditions } from '@/games/dice-rush/lib/game-logic';
+import { useGameState } from '@/games/dice-rush/lib/game-state';
 import { logger } from './logger';
 import { supabase } from './supabase';
 

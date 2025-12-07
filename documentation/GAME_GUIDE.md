@@ -1,8 +1,8 @@
-# DICE RUSH! - Game Guide
+# Tap In - Game Guide
 
 ## How to Play
 
-DICE RUSH! is a fast-paced, simultaneous multiplayer betting game where you and your opponent predict whether the next dice roll will be higher or lower than the current one.
+Tap In is a party game platform featuring multiple mini-games. This guide covers the Dice Rush game - a fast-paced, simultaneous multiplayer betting game where you and your opponent predict whether the next dice roll will be higher or lower than the current one.
 
 ## Getting Started
 

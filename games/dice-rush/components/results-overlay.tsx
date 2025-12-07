@@ -9,7 +9,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import Dice from './dice-2d';
-import type { RoundResult } from '@/lib/game-logic';
+import type { RoundResult } from '@/games/dice-rush/lib/game-logic';
 
 interface ResultsOverlayProps {
   dice: number;

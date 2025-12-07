@@ -1,7 +1,7 @@
 import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Platform } from 'react-native';
+import { Platform, View } from 'react-native';
 import 'react-native-reanimated';
 import '../polyfills';
 
@@ -14,7 +14,7 @@ if (Platform.OS !== 'web') {
 }
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { ThemeProvider } from '@/lib/theme-context';
+import { useThemeHydrated } from '@/lib/stores';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -22,15 +22,19 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const isHydrated = useThemeHydrated();
+
+  // Wait for theme store to hydrate from AsyncStorage
+  if (!isHydrated) {
+    return <View style={{ flex: 1, backgroundColor: '#000' }} />;
+  }
 
   return (
-    <ThemeProvider>
-      <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        </Stack>
-        <StatusBar style="auto" />
-      </NavigationThemeProvider>
-    </ThemeProvider>
+    <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      </Stack>
+      <StatusBar style="auto" />
+    </NavigationThemeProvider>
   );
 }

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { gameConfig } from './game-config';
 import type { Bet, RoundResults } from './game-logic';
-import { logger } from './logger';
+import { logger } from '@/lib/logger';
 
 export type GamePhase = 'LOBBY' | 'BETTING' | 'REVEALING' | 'RESULTS' | 'GAME_OVER';
 export type PlayerRole = 'host' | 'guest';

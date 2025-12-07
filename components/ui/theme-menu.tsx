@@ -1,5 +1,5 @@
-import Dice from '@/components/game/dice-2d';
-import { useTheme } from '@/lib/theme-context';
+import Dice from '@/games/dice-rush/components/dice-2d';
+import { useThemeStore } from '@/lib/stores';
 import type { ColorPaletteName } from '@/lib/home-background-config';
 import { colorPalettes } from '@/lib/home-background-config';
 import * as Haptics from 'expo-haptics';
@@ -23,7 +23,7 @@ const DICE_ICON_SIZE = 40;
 type TabType = 'theme' | 'graphics';
 
 export default function ThemeMenu() {
-  const { theme, setTheme, reduceAnimations, setReduceAnimations } = useTheme();
+  const { theme, setTheme, reduceAnimations, setReduceAnimations } = useThemeStore();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('theme');
   const scale = useSharedValue(1);

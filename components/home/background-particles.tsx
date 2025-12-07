@@ -1,5 +1,5 @@
 import { getHomeBackgroundConfig } from '@/lib/home-background-config';
-import { useTheme } from '@/lib/theme-context';
+import { useTheme, useReduceAnimations } from '@/lib/stores';
 import React, { useEffect, useMemo } from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
 import Animated, {
@@ -135,7 +135,8 @@ interface BackgroundParticlesProps {
 }
 
 export default function BackgroundParticles({ isAnimating = false }: BackgroundParticlesProps) {
-  const { theme, reduceAnimations } = useTheme();
+  const theme = useTheme();
+  const reduceAnimations = useReduceAnimations();
   const config = getHomeBackgroundConfig(theme);
   const particlesConfig = config.particles;
   

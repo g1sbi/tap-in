@@ -10,10 +10,10 @@ export const APP_INFO = {
   VERSION: '0.17.0',
   
   /** App title displayed on home screen */
-  TITLE: 'DICE RUSH!',
+  TITLE: 'TAP IN',
   
   /** App subtitle displayed on home screen */
-  SUBTITLE: 'The Party Betting Game',
+  SUBTITLE: 'The Party Game Platform',
   
   /** Version label prefix (e.g., "Early Access", "Beta", "v1.0") */
   VERSION_LABEL: 'Early Access',

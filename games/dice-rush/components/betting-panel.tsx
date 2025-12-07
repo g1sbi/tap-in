@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import type { Prediction } from '@/lib/game-logic';
-import { EDGE_CASE_DICE } from '@/lib/game-constants';
-import { useTheme } from '@/lib/theme-context';
-import { gameConfig } from '@/lib/game-config';
+import type { Prediction } from '@/games/dice-rush/lib/game-logic';
+import { EDGE_CASE_DICE } from '@/games/dice-rush/lib/game-constants';
+import { useColors } from '@/lib/stores';
+import { gameConfig } from '@/games/dice-rush/lib/game-config';
 
 interface BettingPanelProps {
   maxAmount: number;
@@ -25,7 +25,7 @@ function isLightColor(hex: string): boolean {
 }
 
 export default function BettingPanel({ maxAmount, onBet, disabled = false, locked = false, currentDice }: BettingPanelProps) {
-  const { colors } = useTheme();
+  const colors = useColors();
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   
   useEffect(() => {

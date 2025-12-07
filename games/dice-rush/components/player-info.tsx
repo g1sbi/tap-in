@@ -10,7 +10,7 @@ import Animated, {
   runOnJS,
   Easing,
 } from 'react-native-reanimated';
-import { gameConfig } from '@/lib/game-config';
+import { gameConfig } from '@/games/dice-rush/lib/game-config';
 
 interface PlayerInfoProps {
   points: number;

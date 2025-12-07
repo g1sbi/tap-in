@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Dice Rush",
-    "slug": "dice-rush",
+    "name": "Tap In",
+    "slug": "tap-in",
     "version": "0.17.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "dicerush",
+    "scheme": "tapin",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -38,7 +38,8 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

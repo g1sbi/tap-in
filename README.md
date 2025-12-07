@@ -1,6 +1,6 @@
-# DICE RUSH! - Simultaneous Multiplayer Betting Game
+# Tap In - Party Game Platform
 
-A real-time multiplayer dice betting game built with React Native Expo and Supabase Realtime.
+A multi-game party platform supporting 2-8 players, built with React Native Expo and Supabase Realtime.
 
 ## Quick Start
 

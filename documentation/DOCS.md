@@ -1,4 +1,4 @@
-# DICE RUSH! - Technical Documentation
+# Tap In - Technical Documentation
 
 ## Table of Contents
 
@@ -13,7 +13,7 @@
 
 ## Architecture Overview
 
-DICE RUSH! is a real-time multiplayer game built with React Native Expo. It uses Supabase Realtime for peer-to-peer communication without requiring a custom backend server.
+Tap In is a multi-game party platform built with React Native Expo. It uses Supabase Realtime for peer-to-peer communication without requiring a custom backend server.
 
 ### Key Technologies
 

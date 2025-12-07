@@ -1,11 +1,11 @@
 import Background from '@/components/home/background';
-import BettingPanel from '@/components/game/betting-panel';
-import BettingTimer from '@/components/game/betting-timer';
-import Dice from '@/components/game/dice-2d';
-import PlayerInfo from '@/components/game/player-info';
-import ResultsOverlay from '@/components/game/results-overlay';
-import type { Prediction } from '@/lib/game-logic';
-import { useGameState } from '@/lib/game-state';
+import BettingPanel from '@/games/dice-rush/components/betting-panel';
+import BettingTimer from '@/games/dice-rush/components/betting-timer';
+import Dice from '@/games/dice-rush/components/dice-2d';
+import PlayerInfo from '@/games/dice-rush/components/player-info';
+import ResultsOverlay from '@/games/dice-rush/components/results-overlay';
+import type { Prediction } from '@/games/dice-rush/lib/game-logic';
+import { useGameState } from '@/games/dice-rush/lib/game-state';
 import { roomManager } from '@/lib/room-manager';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';

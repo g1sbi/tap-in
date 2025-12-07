@@ -1,6 +1,6 @@
-import Dice from '@/components/game/dice-2d';
+import Dice from '@/games/dice-rush/components/dice-2d';
 import { homeDiceConfig } from '@/lib/home-dice-config';
-import { useTheme } from '@/lib/theme-context';
+import { useReduceAnimations } from '@/lib/stores';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -24,7 +24,7 @@ interface HomeDiceProps {
 }
 
 export default function HomeDice({ size = homeDiceConfig.defaultSize }: HomeDiceProps) {
-  const { reduceAnimations } = useTheme();
+  const reduceAnimations = useReduceAnimations();
   
   // Dice animation shared values
   const diceScale = useSharedValue(1);

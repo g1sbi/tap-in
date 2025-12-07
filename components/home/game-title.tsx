@@ -1,10 +1,10 @@
 import { APP_INFO } from '@/constants/app-info';
-import { useTheme } from '@/lib/theme-context';
+import { useColors } from '@/lib/stores';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 export default function GameTitle() {
-  const { colors } = useTheme();
+  const colors = useColors();
   // Convert hex to rgba for shadow
   const hexToRgba = (hex: string, alpha: number) => {
     const r = parseInt(hex.slice(1, 3), 16);
@@ -16,8 +16,8 @@ export default function GameTitle() {
   return (
     <View style={styles.container}>
       <View style={styles.titleRow}>
-        <Text style={styles.diceText}>DICE</Text>
-        <Text style={[styles.rushText, { color: colors.primary, textShadowColor: hexToRgba(colors.primary, 0.4) }]}>RUSH!</Text>
+        <Text style={styles.tapText}>TAP</Text>
+        <Text style={[styles.inText, { color: colors.primary, textShadowColor: hexToRgba(colors.primary, 0.4) }]}>IN</Text>
       </View>
       
       <View style={styles.badgeContainer}>
@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
     gap: 8,
   },
-  diceText: {
+  tapText: {
     fontSize: 42,
     fontWeight: '800',
     color: '#FFFFFF',
@@ -48,10 +48,10 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 4 },
     textShadowRadius: 4,
   },
-  rushText: {
+  inText: {
     fontSize: 42,
     fontWeight: '300', // Thin style
-    fontStyle: 'italic', // Speed
+    fontStyle: 'italic',
     letterSpacing: 0,
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 10,

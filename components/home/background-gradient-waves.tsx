@@ -1,5 +1,5 @@
 import { getHomeBackgroundConfig } from '@/lib/home-background-config';
-import { useTheme } from '@/lib/theme-context';
+import { useTheme, useReduceAnimations } from '@/lib/stores';
 import React, { useEffect, useMemo } from 'react';
 import { Dimensions, StyleSheet } from 'react-native';
 import Animated, {
@@ -179,7 +179,8 @@ interface BackgroundGradientWavesProps {
 }
 
 export default function BackgroundGradientWaves({ isAnimating = false }: BackgroundGradientWavesProps) {
-  const { theme, reduceAnimations } = useTheme();
+  const theme = useTheme();
+  const reduceAnimations = useReduceAnimations();
   const bgConfig = getHomeBackgroundConfig(theme);
   const config = bgConfig.gradientWaves;
   const { layerCount, colors, animationSpeed, amplitude, opacity } = config;
