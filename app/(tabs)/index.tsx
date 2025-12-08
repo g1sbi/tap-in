@@ -1,9 +1,5 @@
-import Background from '@/components/home/background';
-import GameTitle from '@/components/home/game-title';
-import HomeDice from '@/components/home/home-dice';
-import ThemeMenu from '@/components/ui/theme-menu';
+import GradientBackground from '@/components/tap-in/gradient-background';
 import { getVersionString } from '@/constants/app-info';
-import { useColors } from '@/lib/stores';
 import { logger } from '@/lib/logger';
 import { unifiedRoomManager } from '@/lib/room/room-manager';
 import * as Haptics from 'expo-haptics';
@@ -20,8 +16,9 @@ export default function HomeScreen() {
   const [isCreating, setIsCreating] = useState(false);
   const [roomCodeError, setRoomCodeError] = useState<string | null>(null);
   const [showGameModal, setShowGameModal] = useState(false);
+  const [showNameModal, setShowNameModal] = useState(false);
+  const [nameModalAction, setNameModalAction] = useState<'create' | 'join'>('create');
   const [displayName, setDisplayName] = useState('');
-  const colors = useColors();
 
   /**
    * Sanitizes room code input by removing non-numeric characters and limiting to 6 digits.
@@ -54,31 +51,14 @@ export default function HomeScreen() {
     }
   };
 
-  const handleCreateRoom = async () => {
-    if (!displayName.trim()) {
-      Alert.alert('Name Required', 'Please enter your display name');
-      return;
-    }
-
-    try {
-      setIsCreating(true);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      const room = await unifiedRoomManager.createRoom({
-        displayName: displayName.trim(),
-        maxPlayers: 8,
-      });
-      logger.info('HomeScreen', 'Room created', { roomId: room.id, code: room.code });
-      router.push('/lobby');
-    } catch (error) {
-      logger.error('HomeScreen', 'Failed to create room', error);
-      Alert.alert('Error', 'Failed to create room. Please try again.');
-    } finally {
-      setIsCreating(false);
-    }
+  const handleCreateRoomClick = () => {
+    setNameModalAction('create');
+    setShowNameModal(true);
   };
 
-  const handleJoinRoom = async () => {
+  const handleJoinRoomClick = () => {
     if (roomCode.length === 0) {
+      Alert.alert('Room Code Required', 'Please enter a 6-digit room code');
       return;
     }
     
@@ -89,28 +69,55 @@ export default function HomeScreen() {
       return;
     }
 
+    setRoomCodeError(null);
+    setNameModalAction('join');
+    setShowNameModal(true);
+  };
+
+  const handleNameSubmit = async () => {
     if (!displayName.trim()) {
       Alert.alert('Name Required', 'Please enter your display name');
       return;
     }
-    
-    setRoomCodeError(null);
 
-    try {
-      setIsJoining(true);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      const room = await unifiedRoomManager.joinRoom({
-        code: roomCode,
-        displayName: displayName.trim(),
-      });
-      logger.info('HomeScreen', 'Joined room', { roomId: room.id, code: room.code });
-      router.push('/lobby');
-    } catch (error) {
-      logger.error('HomeScreen', 'Exception during join', error);
-      const message = error instanceof Error ? error.message : 'Failed to join room. Please try again.';
-      Alert.alert('Error', message);
-    } finally {
-      setIsJoining(false);
+    setShowNameModal(false);
+
+    if (nameModalAction === 'create') {
+      try {
+        setIsCreating(true);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        const room = await unifiedRoomManager.createRoom({
+          displayName: displayName.trim(),
+          maxPlayers: 8,
+        });
+        logger.info('HomeScreen', 'Room created', { roomId: room.id, code: room.code });
+        setDisplayName('');
+        router.push('/lobby');
+      } catch (error) {
+        logger.error('HomeScreen', 'Failed to create room', error);
+        Alert.alert('Error', 'Failed to create room. Please try again.');
+      } finally {
+        setIsCreating(false);
+      }
+    } else {
+      try {
+        setIsJoining(true);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        const room = await unifiedRoomManager.joinRoom({
+          code: roomCode,
+          displayName: displayName.trim(),
+        });
+        logger.info('HomeScreen', 'Joined room', { roomId: room.id, code: room.code });
+        setDisplayName('');
+        setRoomCode('');
+        router.push('/lobby');
+      } catch (error) {
+        logger.error('HomeScreen', 'Exception during join', error);
+        const message = error instanceof Error ? error.message : 'Failed to join room. Please try again.';
+        Alert.alert('Error', message);
+      } finally {
+        setIsJoining(false);
+      }
     }
   };
 
@@ -121,45 +128,29 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Background />
-      <ThemeMenu />
+      <GradientBackground />
       <KeyboardAvoidingView
         style={styles.keyboardAvoidingView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
         <View style={styles.content}>
           <View style={styles.header}>
-            <GameTitle />
+            <Text style={styles.title}>TAP IN</Text>
+            <View style={styles.divider} />
           </View>
 
-          {!isInputFocused && (
-            <View style={styles.diceContainer}>
-              <HomeDice size={170} />
-            </View>
-          )}
-
-          <View style={[styles.actions, isInputFocused && styles.actionsFocused]}>
-            <TextInput
-              style={styles.nameInput}
-              value={displayName}
-              onChangeText={setDisplayName}
-              placeholder="Your name"
-              placeholderTextColor="#666"
-              maxLength={20}
-              autoCapitalize="words"
-            />
-
+          <View style={styles.actions}>
             <TouchableOpacity 
-              style={[styles.primaryButton, { backgroundColor: colors.primary, shadowColor: colors.primary }]} 
-              onPress={handleCreateRoom}
+              style={styles.createButton} 
+              onPress={handleCreateRoomClick}
               disabled={isCreating || isJoining}>
               {isCreating ? (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="small" color="#000000" />
-                  <Text style={[styles.primaryButtonText, { marginLeft: 8 }]}>CREATING...</Text>
+                  <Text style={[styles.createButtonText, { marginLeft: 8 }]}>CREATING...</Text>
                 </View>
               ) : (
-                <Text style={styles.primaryButtonText}>CREATE ROOM</Text>
+                <Text style={styles.createButtonText}>CREATE ROOM</Text>
               )}
             </TouchableOpacity>
 
@@ -175,7 +166,7 @@ export default function HomeScreen() {
                 maxLength={6}
                 keyboardType="number-pad"
                 returnKeyType="done"
-                onSubmitEditing={isJoining ? undefined : handleJoinRoom}
+                onSubmitEditing={isJoining ? undefined : handleJoinRoomClick}
                 editable={!isJoining && !isCreating}
               />
               {roomCodeError && (
@@ -183,32 +174,77 @@ export default function HomeScreen() {
               )}
               <TouchableOpacity 
                 style={[
-                  styles.joinButton, 
-                  { borderColor: colors.secondary, shadowColor: colors.secondary },
+                  styles.joinButton,
                   (isJoining || isCreating) && styles.joinButtonDisabled
                 ]} 
-                onPress={handleJoinRoom}
+                onPress={handleJoinRoomClick}
                 disabled={isJoining || isCreating}
               >
                 {isJoining ? (
                   <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="small" color={colors.secondary} />
-                    <Text style={[styles.joinButtonText, { marginLeft: 8, color: colors.secondary }]}>JOINING...</Text>
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <Text style={[styles.joinButtonText, { marginLeft: 8 }]}>JOINING...</Text>
                   </View>
                 ) : (
-                  <Text style={[styles.joinButtonText, { color: colors.secondary }]}>JOIN ROOM</Text>
+                  <Text style={styles.joinButtonText}>JOIN ROOM</Text>
                 )}
               </TouchableOpacity>
             </View>
 
+            <View style={styles.separator} />
+
             <TouchableOpacity 
-              style={[styles.chooseGameButton, { borderColor: colors.primary }]} 
+              style={styles.chooseGameButton} 
               onPress={handleChooseGame}>
-              <Text style={[styles.chooseGameButtonText, { color: colors.primary }]}>CHOOSE GAME</Text>
+              <Text style={styles.chooseGameButtonText}>CHOOSE GAME</Text>
             </TouchableOpacity>
 
             <Text style={styles.version}>{getVersionString()}</Text>
           </View>
+
+          <Modal
+            visible={showNameModal}
+            transparent
+            animationType="fade"
+            onRequestClose={() => {
+              setShowNameModal(false);
+              setDisplayName('');
+            }}>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Enter Your Name</Text>
+                <TextInput
+                  style={styles.nameInput}
+                  value={displayName}
+                  onChangeText={setDisplayName}
+                  placeholder="Your name"
+                  placeholderTextColor="#666"
+                  maxLength={20}
+                  autoCapitalize="words"
+                  autoFocus
+                  returnKeyType="done"
+                  onSubmitEditing={handleNameSubmit}
+                />
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity
+                    style={styles.modalCancelButton}
+                    onPress={() => {
+                      setShowNameModal(false);
+                      setDisplayName('');
+                    }}>
+                    <Text style={styles.modalCancelButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.modalConfirmButton}
+                    onPress={handleNameSubmit}>
+                    <Text style={styles.modalConfirmButtonText}>
+                      {nameModalAction === 'create' ? 'Create' : 'Join'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
 
           <Modal
             visible={showGameModal}
@@ -220,7 +256,7 @@ export default function HomeScreen() {
                 <Text style={styles.modalTitle}>Choose a Game</Text>
                 <Text style={styles.modalSubtitle}>Coming soon: Game selection</Text>
                 <TouchableOpacity
-                  style={[styles.modalCloseButton, { backgroundColor: colors.primary }]}
+                  style={styles.modalCloseButton}
                   onPress={() => setShowGameModal(false)}>
                   <Text style={styles.modalCloseButtonText}>Close</Text>
                 </TouchableOpacity>
@@ -236,7 +272,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: '#0A0A0A',
   },
   keyboardAvoidingView: {
     flex: 1,
@@ -246,14 +282,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    paddingTop: 40,
+    paddingTop: 60,
     paddingBottom: 20,
   },
   header: {
     alignItems: 'center',
-    gap: 6,
-    flex: 0.25,
+    gap: 12,
+    flex: 0.2,
     justifyContent: 'center',
+  },
+  title: {
+    fontSize: 48,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 2,
+  },
+  divider: {
+    width: 60,
+    height: 2,
+    backgroundColor: '#FFFFFF',
+    opacity: 0.3,
   },
   version: {
     fontSize: 12,
@@ -261,54 +309,30 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 10,
   },
-  diceContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 0.35,
-  },
   actions: {
     width: '100%',
     gap: 16,
-    flex: 0.4,
+    flex: 0.5,
     justifyContent: 'flex-end',
   },
-  actionsFocused: {
-    flex: 0.8, // More space when keyboard is open
-    justifyContent: 'center',
-  },
-  primaryButton: {
+  createButton: {
+    backgroundColor: '#FFFFFF',
     paddingVertical: 16,
     paddingHorizontal: 32,
-    borderRadius: 14,
+    borderRadius: 12,
     alignItems: 'center',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    elevation: 5,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
   },
-  primaryButtonText: {
+  createButtonText: {
     color: '#000000',
     fontSize: 18,
-    fontWeight: '900',
+    fontWeight: '700',
     letterSpacing: 1.5,
-  },
-  nameInput: {
-    backgroundColor: '#000000',
-    borderWidth: 1,
-    borderColor: '#333',
-    borderRadius: 12,
-    padding: 14,
-    color: '#FFFFFF',
-    fontSize: 16,
-    textAlign: 'center',
   },
   joinSection: {
     gap: 10,
   },
   codeInput: {
-    backgroundColor: '#000000',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
     borderColor: '#333',
     borderRadius: 12,
@@ -317,21 +341,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     letterSpacing: 3,
-    // Subtle glow
-    shadowColor: '#FFFFFF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
   codeInputError: {
-    borderColor: '#FF0000',
+    borderColor: '#FF4444',
     borderWidth: 2,
-    shadowColor: '#FF0000',
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
   },
   errorText: {
-    color: '#FF0000',
+    color: '#FF4444',
     fontSize: 12,
     marginTop: 4,
     textAlign: 'center',
@@ -344,14 +360,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     borderWidth: 2,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    borderColor: '#FFFFFF',
   },
   joinButtonText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
     letterSpacing: 1.5,
+    color: '#FFFFFF',
   },
   joinButtonDisabled: {
     opacity: 0.5,
@@ -361,21 +376,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  separator: {
+    height: 1,
+    backgroundColor: '#333',
+    marginVertical: 8,
+  },
   chooseGameButton: {
-    backgroundColor: 'transparent',
+    backgroundColor: '#3B82F6',
     paddingVertical: 14,
     paddingHorizontal: 32,
     borderRadius: 12,
     alignItems: 'center',
-    borderWidth: 2,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
   },
   chooseGameButtonText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
     letterSpacing: 1.5,
+    color: '#FFFFFF',
   },
   modalOverlay: {
     flex: 1,
@@ -389,7 +406,7 @@ const styles = StyleSheet.create({
     padding: 24,
     width: '80%',
     maxWidth: 400,
-    alignItems: 'center',
+    alignItems: 'stretch',
     borderWidth: 1,
     borderColor: '#333',
   },
@@ -397,7 +414,8 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 8,
+    marginBottom: 20,
+    textAlign: 'center',
   },
   modalSubtitle: {
     fontSize: 14,
@@ -405,7 +423,50 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     textAlign: 'center',
   },
+  nameInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: '#333',
+    borderRadius: 12,
+    padding: 14,
+    color: '#FFFFFF',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalCancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#666',
+  },
+  modalCancelButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalConfirmButton: {
+    flex: 1,
+    backgroundColor: '#3B82F6',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalConfirmButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   modalCloseButton: {
+    backgroundColor: '#3B82F6',
     paddingVertical: 12,
     paddingHorizontal: 32,
     borderRadius: 12,
@@ -413,7 +474,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalCloseButtonText: {
-    color: '#000000',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
   },

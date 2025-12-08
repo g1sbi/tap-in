@@ -129,17 +129,18 @@ npx expo export:web
 # Deploy to Vercel/Netlify/etc.
 ```
 
-See [DOCS.md](./DOCS.md) for detailed deployment instructions.
+See [DEVELOPER_GUIDE.md](./documentation/DEVELOPER_GUIDE.md) for detailed deployment instructions.
 
 ## Documentation
 
-📚 **Full documentation available in [DOCS.md](./DOCS.md)**
+📚 **Full documentation available in [DEVELOPER_GUIDE.md](./documentation/DEVELOPER_GUIDE.md)**
 
 The documentation includes:
 - Architecture overview
-- Code structure and API reference
-- Component documentation
-- Game flow explanation
+- Project structure and organization
+- State management with Zustand
+- Room system and multiplayer
+- Game integration guide
 - Detailed setup instructions
 - Deployment guides (EAS Build, Web, etc.)
 - Troubleshooting guide

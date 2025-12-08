@@ -111,15 +111,18 @@ You'll see:
 
 ## Next Steps
 
-- Read [DOCS.md](./DOCS.md) for detailed documentation
-- See [README.md](./README.md) for game rules and features
-- Deploy to production using EAS Build (see DOCS.md)
+- Read [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md) for detailed documentation
+- See [README.md](../README.md) for platform overview
+- See [GAME_GUIDE.md](./GAME_GUIDE.md) for game rules and features
+- Deploy to production using EAS Build (see DEVELOPER_GUIDE.md)
 
 ## Need Help?
 
-Check the full [DOCS.md](./DOCS.md) for:
+Check the full [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md) for:
 - Architecture details
-- Component documentation
+- State management with Zustand
+- Room system documentation
+- Game integration guide
 - Deployment guides
 - Advanced troubleshooting
 

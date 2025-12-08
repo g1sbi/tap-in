@@ -1,26 +1,43 @@
 # Tap In - Game Guide
 
-## How to Play
+## Platform Overview
 
-Tap In is a party game platform featuring multiple mini-games. This guide covers the Dice Rush game - a fast-paced, simultaneous multiplayer betting game where you and your opponent predict whether the next dice roll will be higher or lower than the current one.
+Tap In is a multi-game party platform supporting 2-8 players. This guide covers the platform's core features and provides detailed rules for Dice Rush, the first available mini-game.
+
+## Platform Features
+
+- **Simple Room System**: Create or join games with 6-digit codes
+- **Multiple Games**: Choose from a growing library of party games
+- **Real-time Multiplayer**: Seamless peer-to-peer gameplay
+- **Neutral Interface**: Clean, modern UI that adapts to any game
+
+---
+
+# Dice Rush
+
+A fast-paced, simultaneous multiplayer betting game where you and your opponent predict whether the next dice roll will be higher or lower than the current one.
 
 ## Getting Started
 
-### Setting Up a Game
+### Creating or Joining a Room
 
-1. **Host a Game**
-   - Tap "HOST GAME" on the home screen
+1. **Create a Room** (Host)
+   - Tap "CREATE ROOM" on the home screen
+   - Enter your name in the modal
    - You'll receive a 6-digit room code
-   - Share this code with your opponent
+   - Share this code with your friends
 
-2. **Join a Game**
+2. **Join a Room** (Guest)
    - Enter the 6-digit room code on the home screen
-   - Tap "JOIN GAME"
-   - Wait for the host to start
+   - Tap "JOIN ROOM"
+   - Enter your name in the modal
+   - Wait in the lobby for the host
 
-3. **Starting the Game**
-   - Once both players are connected, a 3-second countdown begins
-   - The game starts automatically after the countdown
+3. **Select a Game**
+   - In the lobby, browse available games
+   - Host selects which game to play
+   - All players mark themselves as ready
+   - Host starts the game when ready
 
 ## Gameplay Overview
 

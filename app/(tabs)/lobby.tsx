@@ -1,16 +1,10 @@
-import Background from '@/components/home/background';
+import GradientBackground from '@/components/tap-in/gradient-background';
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { useColors, useRoomStore } from '@/lib/stores';
+import { useRoomStore } from '@/lib/stores';
 import type { PlayerStatus } from '@/lib/room/room-types';
 import { gameConfig as diceRushConfig } from '@/games/dice-rush';
 import { gameConfig as edgeConfig } from '@/games/edge';
@@ -18,27 +12,16 @@ import { gameConfig as edgeConfig } from '@/games/edge';
 const AVAILABLE_GAMES = [diceRushConfig, edgeConfig];
 
 export default function LobbyScreen() {
-  const colors = useColors();
   const router = useRouter();
   const { room, loading, error, isHost, currentPlayer, setPlayerStatus, setRoomStatus, setSelectedGames: updateSelectedGames, leaveRoom, initialize } = useRoomStore();
   const [showGameModal, setShowGameModal] = useState(false);
   const [localSelectedGames, setLocalSelectedGames] = useState<string[]>([]);
-
-  const pulse = useSharedValue(1);
 
   // Initialize room store subscriptions
   useEffect(() => {
     const cleanup = initialize();
     return cleanup;
   }, [initialize]);
-
-  useEffect(() => {
-    pulse.value = withRepeat(
-      withTiming(1.1, { duration: 1000, reduceMotion: false }),
-      -1,
-      true
-    );
-  }, []);
 
   useEffect(() => {
     if (room) {
@@ -118,14 +101,10 @@ export default function LobbyScreen() {
     }
   };
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pulse.value }],
-  }));
-
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <Background />
+        <GradientBackground />
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading room...</Text>
         </View>
@@ -136,7 +115,7 @@ export default function LobbyScreen() {
   if (error || !room) {
     return (
       <SafeAreaView style={styles.container}>
-        <Background />
+        <GradientBackground />
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error || 'Room not found'}</Text>
           <TouchableOpacity style={styles.leaveButton} onPress={handleLeave}>
@@ -152,7 +131,7 @@ export default function LobbyScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Background />
+      <GradientBackground />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
           <View style={styles.header}>
@@ -161,16 +140,16 @@ export default function LobbyScreen() {
 
           <View style={styles.roomCodeSection}>
             <Text style={styles.label}>Room Code</Text>
-            <Text style={[styles.roomCode, { color: colors.primary }]}>{room.code}</Text>
+            <Text style={styles.roomCode}>{room.code}</Text>
             <Text style={styles.hint}>Share this code with friends</Text>
           </View>
 
           {isHost && (
             <View style={styles.gameSelectionSection}>
               <TouchableOpacity
-                style={[styles.gameSelectButton, { borderColor: colors.primary }]}
+                style={styles.gameSelectButton}
                 onPress={() => setShowGameModal(true)}>
-                <Text style={[styles.gameSelectButtonText, { color: colors.primary }]}>
+                <Text style={styles.gameSelectButtonText}>
                   {localSelectedGames.length > 0
                     ? `Games: ${localSelectedGames.length} selected`
                     : 'Select Games'}
@@ -210,14 +189,14 @@ export default function LobbyScreen() {
               style={[
                 styles.readyButton,
                 currentPlayer?.status === 'ready'
-                  ? { backgroundColor: colors.primary }
-                  : { borderColor: colors.primary, borderWidth: 2 },
+                  ? styles.readyButtonActive
+                  : styles.readyButtonInactive,
               ]}
               onPress={handleToggleReady}>
               <Text
                 style={[
                   styles.readyButtonText,
-                  currentPlayer?.status === 'ready' && { color: '#000000' },
+                  currentPlayer?.status === 'ready' && styles.readyButtonTextActive,
                 ]}>
                 {currentPlayer?.status === 'ready' ? 'READY ✓' : 'READY UP'}
               </Text>
@@ -226,13 +205,13 @@ export default function LobbyScreen() {
 
           {isHost && (
             <TouchableOpacity
-              style={[styles.startButton, canStart && { backgroundColor: colors.primary }]}
+              style={[styles.startButton, canStart && styles.startButtonActive]}
               onPress={handleStartGame}
               disabled={!canStart}>
               <Text
                 style={[
                   styles.startButtonText,
-                  canStart && { color: '#000000' },
+                  canStart && styles.startButtonTextActive,
                 ]}>
                 START GAME
               </Text>
@@ -259,7 +238,7 @@ export default function LobbyScreen() {
                   key={game.id}
                   style={[
                     styles.gameItem,
-                    localSelectedGames.includes(game.id) && { backgroundColor: colors.primary + '20' },
+                    localSelectedGames.includes(game.id) && styles.gameItemSelected,
                   ]}
                   onPress={() => handleToggleGame(game.id)}>
                   <Text style={styles.gameIcon}>{game.icon}</Text>
@@ -277,7 +256,7 @@ export default function LobbyScreen() {
               ))}
             </ScrollView>
             <TouchableOpacity
-              style={[styles.modalCloseButton, { backgroundColor: colors.primary }]}
+              style={styles.modalCloseButton}
               onPress={() => setShowGameModal(false)}>
               <Text style={styles.modalCloseButtonText}>Done</Text>
             </TouchableOpacity>
@@ -291,7 +270,7 @@ export default function LobbyScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: '#0A0A0A',
   },
   scrollContent: {
     flexGrow: 1,
@@ -342,6 +321,7 @@ const styles = StyleSheet.create({
     fontSize: 64,
     fontWeight: 'bold',
     letterSpacing: 8,
+    color: '#FFFFFF',
   },
   hint: {
     fontSize: 14,
@@ -355,11 +335,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 12,
     borderWidth: 2,
+    borderColor: '#3B82F6',
     alignItems: 'center',
   },
   gameSelectButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: '#3B82F6',
   },
   playersSection: {
     width: '100%',
@@ -414,10 +396,21 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
   },
+  readyButtonInactive: {
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    backgroundColor: 'transparent',
+  },
+  readyButtonActive: {
+    backgroundColor: '#FFFFFF',
+  },
   readyButtonText: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#FFFFFF',
+  },
+  readyButtonTextActive: {
+    color: '#000000',
   },
   startButton: {
     paddingVertical: 16,
@@ -426,10 +419,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#333',
   },
+  startButtonActive: {
+    backgroundColor: '#3B82F6',
+  },
   startButtonText: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#888',
+  },
+  startButtonTextActive: {
+    color: '#FFFFFF',
   },
   leaveButton: {
     paddingVertical: 12,
@@ -476,6 +475,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#333',
   },
+  gameItemSelected: {
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    borderColor: '#3B82F6',
+  },
   gameIcon: {
     fontSize: 32,
     marginRight: 16,
@@ -508,9 +511,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     borderRadius: 12,
     alignItems: 'center',
+    backgroundColor: '#3B82F6',
   },
   modalCloseButtonText: {
-    color: '#000000',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
   },
